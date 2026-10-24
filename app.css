@@ -154,3 +154,11 @@ h1, h2, .step-title, .quote p, .sheet h2{font-weight:900 !important}
 .sec-h b{font-size:18px;font-weight:900 !important}
 .mrow .box{border-color:#8E8676}
 .week .c{border-color:#A79F90}
+
+.nrow{display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;border-radius:14px;background:#383C5E;border:none;width:100%;text-align:left;font-size:16px;color:#F1EEF7}
+.nrow .box{width:28px;height:28px;border-radius:14px;border:2px dashed #AEB4DD;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.nrow.done .box{border:none;background:#DDE2FF}
+.nrow.done .t{text-decoration:line-through;color:#C9CBE0}
+.nbox{background:#2A2D47;border-radius:14px;padding:12px}
+.nbox textarea{background:#1E2033;color:#F1EEF7;border-color:#4A4F7A}
+.night .btn.ghost-n{background:transparent;color:#F1EEF7;border:1.5px solid #6A6F9A}

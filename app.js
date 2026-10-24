@@ -159,8 +159,8 @@
   }
   function isNight() { var h = new Date().getHours(); return S.night || h >= 22 || h < 4; }
 
-  function viewHome() {
-    if (isNight()) return viewNight();
+  function viewHome(force) {
+    if (!force && isNight()) return viewNight();
     var q = quoteOfDay(), t = today();
     var h = header("早安", null, '<div class="quote"><small>今天的心靈雞湯</small><p>' + esc(q.text) + "</p><em>— " + esc(q.from) + "</em></div>");
 
@@ -207,7 +207,9 @@
       '<a class="tile ln" href="#lines"><b>三條線</b><span>看我走到哪</span></a>' +
       '<a class="tile th" href="#thought"><b>腦袋很吵</b><span>3 分鐘整理</span></a></div>';
 
-    return '<div class="wrap">' + h + morning + step + week + tiles + "</div>";
+    var hr = new Date().getHours();
+    var bed = hr >= 20 ? '<section class="sec"><div class="card" style="background:var(--night);color:#fff"><div style="font-size:18px;font-weight:900">準備收工了嗎？</div><p style="margin:6px 0 0;font-size:14px;color:#E6E8F8;line-height:1.6">睡前三件事：手機放書桌、煩惱放進盒子、吃 GABA。<br>晚上 10 點後會自動換成收工畫面。</p><a class="btn" href="#night" style="background:#DDE2FF;color:#1E2033">開始收工</a></div></section>' : "";
+    return '<div class="wrap">' + h + morning + step + bed + week + tiles + "</div>";
   }
 
   function onHomeClick(e) {
@@ -239,16 +241,54 @@
   }
 
   /* ---------- 晚上 ---------- */
+  var NB = { open: false, text: "" };
   function viewNight() {
     var t = today(), n = S.stamps.filter(function (s) { return s.d === t; }).length;
-    var phone = S.stamps.some(function (s) { return s.d === t && s.k === "night"; });
+    var nd = (S.nightDone && S.nightDone[t]) || [false, false, false];
+    var CK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E2033" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+    var rows = D.night.map(function (txt, i) {
+      var row = '<button class="nrow' + (nd[i] ? " done" : "") + '" data-nt="' + i + '"><span class="box">' + (nd[i] ? CK : "") + '</span><span class="t">' + esc(txt) + "</span></button>";
+      if (i === 1 && NB.open && !nd[1]) {
+        row += '<div class="nbox"><p class="soft" style="margin:0 0 8px;font-size:14px;line-height:1.6">今天腦中一直重播的畫面、想好要怎麼回的話，寫一兩句放進來。明天再說，今晚不用想完。</p>' +
+          '<textarea id="nbt" rows="3" placeholder="例如：中午那句話，她是不是覺得我很怪……"></textarea>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn small" data-nb="put">放進盒子</button><button class="btn small ghost-n" data-nb="none">今天沒有</button></div></div>';
+      }
+      return row;
+    }).join("");
+    var allDone = nd[0] && nd[1] && nd[2];
     return '<div class="night"><div class="wrap" style="padding:calc(env(safe-area-inset-top) + 40px) 20px 90px">' +
       '<div class="soft" style="font-size:14px">' + new Date().getHours() + ":" + pad(new Date().getMinutes()) + "</div>" +
       '<h1 style="font-size:30px;margin:6px 0">今天收工了。</h1><p class="soft" style="margin:0 0 20px">今天蓋了 ' + n + " 個章。" + (n ? "夠了。" : "明天再來就好。") + "</p>" +
-      '<div class="card" style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#DDE2FF">睡前一小步</div><div style="font-size:19px;margin:8px 0">把手機放到書桌上充電</div>' +
-      (phone ? '<p class="soft" style="margin:0">放好了。晚安。</p>' : '<button class="btn" data-night="phone">放好了，晚安</button>') + "</div>" +
-      '<div class="card"><div style="font-size:13px;font-weight:700;color:#DDE2FF">明天醒來的第一步</div><div style="font-size:17px;margin:8px 0 4px">拉開窗簾，再帶狗狗出門</div><div class="soft" style="font-size:13px">已經幫你選好，明天不用想。</div></div>' +
-      '<p style="text-align:center;margin-top:40px;line-height:1.7">夜裡的你，也是你。<br>但明天的你會感謝現在去睡的你。</p></div></div>';
+      '<div class="card" style="margin-bottom:12px"><div style="font-size:15px;color:#DDE2FF;margin-bottom:10px">睡前三件事' + (allDone ? " · 晚安章蓋好了" : " · 做完蓋晚安章") + '</div><div class="morning">' + rows + "</div></div>" +
+      '<div class="card"><div style="font-size:15px;color:#DDE2FF">明天醒來的第一步</div><div style="font-size:18px;margin:8px 0 4px">拉開窗簾，再帶狗狗出門</div><div class="soft" style="font-size:14px">已經幫你選好，明天不用想。</div></div>' +
+      '<p style="text-align:center;margin-top:36px;line-height:1.7">夜裡的你，也是你。<br>但明天的你會感謝現在去睡的你。</p>' +
+      '<p style="text-align:center"><a href="#day" class="soft" style="font-size:14px">看白天的畫面</a></p></div></div>';
+  }
+  function onNight(e) {
+    var t = today();
+    S.nightDone = S.nightDone || {};
+    var nd = S.nightDone[t] || [false, false, false];
+    var r = e.target.closest("[data-nt]");
+    if (r) {
+      var i = +r.getAttribute("data-nt");
+      if (i === 1 && !nd[1]) { NB.open = !NB.open; render(); return; }
+      nd[i] = !nd[i]; S.nightDone[t] = nd; save(); checkNight(nd); return;
+    }
+    var b = e.target.closest("[data-nb]");
+    if (b) {
+      var el = document.getElementById("nbt"), txt = el ? el.value.trim() : "";
+      if (b.getAttribute("data-nb") === "put" && txt) S.thoughts.push({ d: t, fact: "", thought: txt, box: true, b1: 0, b2: 0, friend: "" });
+      nd[1] = true; S.nightDone[t] = nd; NB.open = false; save(); checkNight(nd); return;
+    }
+  }
+  function checkNight(nd) {
+    var t = today();
+    if (nd[0] && nd[1] && nd[2] && !S.stamps.some(function (s) { return s.d === t && s.k === "night"; })) {
+      var r = addStamp("night");
+      showDone({ title: "晚安。", text: "手機放好了，煩惱收進盒子了。今天到這裡就好，明天見。", flip: r.flip, pageDone: r.pageDone });
+      return;
+    }
+    render();
   }
 
   /* ---------- 期中地圖 ---------- */
@@ -463,6 +503,7 @@
     else if (h === "thought") html = viewThought();
     else if (h === "setup") html = viewSetup();
     else if (h === "night") html = viewNight();
+    else if (h === "day") html = viewHome(true);
     else html = viewHome();
     app.innerHTML = html;
     if (h === "thought") restoreFields();
@@ -476,13 +517,12 @@
       var id = cd.getAttribute("data-course-done"), c = courseById(id);
       completeStep({ t: c.steps[S.course[id] || 0].t, course: c, idx: S.course[id] || 0 }); return;
     }
-    var nb = e.target.closest("[data-night]");
-    if (nb) { var r = addStamp("night"); showDone({ title: "晚安。", text: "手機放好了，明天見。", flip: r.flip, pageDone: r.pageDone }); return; }
+    if (e.target.closest("[data-nt],[data-nb]")) { onNight(e); return; }
     var g = e.target.closest("[data-gal]");
     if (g) { S.page += 1; S.img = null; save(); render(); return; }
     if (h === "thought") { onThought(e); return; }
     if (h === "setup") { onSetup(e); return; }
-    if (h === "home" || h === "") onHomeClick(e);
+    if (h === "home" || h === "" || h === "day") onHomeClick(e);
   });
   app.addEventListener("input", function (e) {
     if (e.target.id === "b1" || e.target.id === "b2") {
@@ -503,6 +543,7 @@
       '<a href="#lines">我的三條線</a>' +
       '<a href="#gallery">我的畫冊（拼圖）<small>可以從相簿選一張畫試試</small></a>' +
       '<a href="#thought">腦袋很吵（想法偵探）</a>' +
+      '<a href="#night">晚上收工畫面<small>睡前三件事；晚上 8 點後主畫面會出現入口，10 點後自動切換</small></a>' +
       '<button class="pv" data-pv="night">' + (S.night ? "關閉" : "打開") + '晚上畫面<small>晚上 10 點後會自動出現</small></button>' +
       '<button class="pv" data-pv="reset">清除所有紀錄，重新開始</button>' +
       '<button class="btn dark" data-pv="close">關閉</button></div>';
