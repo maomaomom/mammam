@@ -2,7 +2,8 @@
   "use strict";
   var D = window.APP_DATA;
   var KEY = "xiaobu-v1";
-  var PIECES = 20;
+  // 拼圖片數：前 3 張 9 片（3×3，回饋快），之後每張 12 片（3×4，大約一週一張）
+  function piecesOf(page) { return page < 3 ? 9 : 12; }
   var app = document.getElementById("app");
   var modal = document.getElementById("modal");
 
@@ -56,19 +57,21 @@
   var ART = '<svg class="art" viewBox="0 0 300 375" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="300" height="375" fill="#FAEEDA"/><rect x="50" y="40" width="200" height="230" rx="6" fill="#B5D4F4"/><circle cx="190" cy="110" r="38" fill="#EF9F27"/><rect x="50" y="40" width="200" height="230" rx="6" fill="none" stroke="#854F0B" stroke-width="8"/><line x1="150" y1="40" x2="150" y2="270" stroke="#854F0B" stroke-width="6"/><line x1="50" y1="155" x2="250" y2="155" stroke="#854F0B" stroke-width="6"/><path d="M50 40 Q85 150 58 270" fill="#D85A30"/><path d="M250 40 Q215 150 242 270" fill="#D85A30"/><polygon points="150,270 70,375 230,375" fill="#FAC775" opacity=".7"/><ellipse cx="150" cy="330" rx="40" ry="18" fill="#5F5E5A"/><circle cx="182" cy="318" r="14" fill="#5F5E5A"/></svg>';
 
   /* ---------- 拼圖 ---------- */
-  var ORDER = [7, 12, 2, 17, 9, 0, 14, 5, 19, 3, 10, 16, 1, 8, 18, 6, 13, 4, 15, 11];
-  function revealed() { return Math.max(0, Math.min(PIECES, S.stamps.length - S.page * PIECES)); }
+  var ORDERS = { 9: [4, 0, 8, 2, 6, 1, 7, 3, 5], 12: [5, 0, 11, 2, 9, 7, 3, 10, 1, 6, 8, 4] };
+  function usedBefore(page) { var t = 0; for (var i = 0; i < page; i++) t += piecesOf(i); return t; }
+  function revealed() { var P = piecesOf(S.page); return Math.max(0, Math.min(P, S.stamps.length - usedBefore(S.page))); }
   function puzzleHTML(flipIndex) {
     var n = revealed(), open = {};
+    var P = piecesOf(S.page), ORDER = ORDERS[P];
     for (var i = 0; i < n; i++) open[ORDER[i]] = i;
     var cells = "";
-    for (var c = 0; c < PIECES; c++) {
+    for (var c = 0; c < P; c++) {
       var cls = "pc";
       if (open[c] !== undefined) cls += (open[c] === flipIndex ? " flip" : " open");
       cells += '<div class="' + cls + '"></div>';
     }
     var pic = S.img ? '<img src="' + S.img + '" alt="你的畫">' : ART;
-    return '<div class="puzzle">' + pic + '<div class="grid">' + cells + "</div></div>";
+    return '<div class="puzzle">' + pic + '<div class="grid" style="grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(' + (P / 3) + ',1fr)">' + cells + "</div></div>";
   }
 
   /* ---------- 科目 ---------- */
@@ -110,7 +113,7 @@
   function addStamp(kind) {
     S.stamps.push({ d: today(), k: kind });
     var n = revealed();
-    var pageDone = n >= PIECES;
+    var pageDone = n >= piecesOf(S.page);
     save();
     return { flip: n - 1, pageDone: pageDone };
   }
@@ -127,8 +130,8 @@
     var html = '<div class="sheet" role="dialog" aria-label="完成">' + (o.noStamp ? "" : sealSVG(today(), true)) +
       "<h2>" + esc(o.title) + "</h2><p>" + esc(o.text) + "</p>" +
       (o.noStamp ? "" : '<div class="mini-pz">' + puzzleHTML(o.flip) + "</div>" +
-      "<p><b>揭開了第 " + n + " 片 / " + PIECES + "</b></p>");
-    if (o.pageDone) html += '<p class="toast">這一張拼圖完成了！可以兌換一個往外走的獎勵。</p>';
+      "<p><b>揭開了第 " + n + " 片 / " + piecesOf(S.page) + "</b></p>");
+    if (o.pageDone) html += '<p class="toast">這一張拼圖完成了！到「我的畫冊」看看完整的畫。</p>';
     if (o.choice) {
       html += '<div class="choice"><button class="btn dark" data-act="rest">今天到這裡就好</button><small>明天會出現下一步</small>' +
         '<button class="btn ghost" data-act="more">我想再走一步</button><small>多走的步也會蓋章，明天的目標仍然只有一步</small></div>';
@@ -214,8 +217,11 @@
   }
   function header(title, backTo, sub) {
     var t = new Date();
-    return '<header class="hero">' + (backTo ? "" : WIN) +
-      (backTo ? '<a class="back" href="#' + backTo + '">← 回到今天</a>' : '<div class="date">' + (t.getMonth() + 1) + " 月 " + t.getDate() + " 日 · 星期" + WD[t.getDay()] + "</div>") +
+    if (!backTo) {
+      return '<header class="hero home"><div class="toprow"><span>' + (t.getMonth() + 1) + " 月 " + t.getDate() + " 日 · 星期" + WD[t.getDay()] + '</span><span>慢慢日記</span></div>' +
+        '<img class="illus" src="img/day.jpg" alt="">' + (sub || "") + "</header>";
+    }
+    return '<header class="hero"><a class="back" href="#' + backTo + '">← 回到' + (backTo === "home" ? "今天" : "上一頁") + "</a>" +
       "<h1>" + title + "</h1>" + (sub || "") + "</header>";
   }
   function isNight() { var h = new Date().getHours(); return S.night || h >= 22 || h < 4; }
@@ -264,12 +270,12 @@
     var week = '<section class="sec"><div class="sec-h"><span class="n">3</span><b>這週</b><span class="r">有 ' + weekCount + " 天蓋了章 · 沒蓋的日子不扣分</span></div><div class=\"week\">" + days + "</div></section>";
 
     var tiles = '<div class="tiles">' +
-      '<a class="tile pz" href="#gallery"><div class="thumb">' + puzzleHTML(-1) + '</div><div class="lbl"><b>我的畫冊</b><span> ' + revealed() + "/" + PIECES + " 片</span></div></a>" +
+      '<a class="tile pz" href="#gallery"><div class="thumb">' + puzzleHTML(-1) + '</div><div class="lbl"><b>我的畫冊</b><span> ' + revealed() + "/" + piecesOf(S.page) + " 片</span></div></a>" +
       '<a class="tile ln" href="#lines"><b>三條線</b><span>看我走到哪</span></a>' +
       '<a class="tile th" href="#thought"><b>腦袋很吵</b><span>3 分鐘整理</span></a></div>';
 
     var hr = new Date().getHours();
-    var bed = hr >= 20 ? '<section class="sec"><div class="card" style="background:var(--night);color:#fff"><div style="font-size:18px;font-weight:900">準備收工了嗎？</div><p style="margin:6px 0 0;font-size:14px;color:#E6E8F8;line-height:1.6">睡前三件事：手機放書桌、煩惱放進盒子、吃 GABA。<br>晚上 10 點後會自動換成收工畫面。</p><a class="btn" href="#night" style="background:#DDE2FF;color:#1E2033">開始收工</a></div></section>' : "";
+    var bed = hr >= 20 ? '<section class="sec"><div class="card" style="background:#12322D;color:#F1E4BE"><div style="font-size:19px;font-weight:900;color:#F2B33D;font-family:var(--serif)">準備收工了嗎？</div><p style="margin:6px 0 0;font-size:14px;color:#F1E4BE;line-height:1.6">睡前三件事：手機放書桌、煩惱放進盒子、吃 GABA。<br>晚上 10 點後會自動換成收工畫面。</p><a class="btn" href="#night" style="background:transparent;color:#B9D86A;border:2.5px solid #B9D86A">開始收工</a></div></section>' : "";
     return '<div class="wrap">' + h + morning + step + bed + week + tiles + "</div>";
   }
 
@@ -317,11 +323,11 @@
       return row;
     }).join("");
     var allDone = nd[0] && nd[1] && nd[2];
-    return '<div class="night"><div class="wrap" style="padding:calc(env(safe-area-inset-top) + 40px) 20px 90px">' +
-      '<div class="soft" style="font-size:14px">' + new Date().getHours() + ":" + pad(new Date().getMinutes()) + "</div>" +
-      '<h1 style="font-size:30px;margin:6px 0">今天收工了。</h1><p class="soft" style="margin:0 0 20px">今天蓋了 ' + n + " 個章。" + (n ? "夠了。" : "明天再來就好。") + "</p>" +
-      '<div class="card" style="margin-bottom:12px"><div style="font-size:15px;color:#DDE2FF;margin-bottom:10px">睡前三件事' + (allDone ? " · 晚安章蓋好了" : " · 做完蓋晚安章") + '</div><div class="morning">' + rows + "</div></div>" +
-      '<div class="card"><div style="font-size:15px;color:#DDE2FF">明天醒來的第一步</div><div style="font-size:18px;margin:8px 0 4px">拉開窗簾，再帶狗狗出門</div><div class="soft" style="font-size:14px">已經幫你選好，明天不用想。</div></div>' +
+    return '<div class="night"><div class="wrap" style="padding:calc(env(safe-area-inset-top) + 24px) 20px 90px">' +
+      '<div class="toprow"><span>' + new Date().getHours() + ":" + pad(new Date().getMinutes()) + '</span><span>慢慢日記</span></div>' +
+      '<h1 class="ntitle">今天收工了。</h1><img class="illus" src="img/night.jpg" alt=""><p class="soft" style="margin:0 0 20px">今天蓋了 ' + n + " 個章。" + (n ? "夠了。" : "明天再來就好。") + "</p>" +
+      '<div class="card" style="margin-bottom:12px"><div style="font-size:15px;color:#F2B33D;margin-bottom:10px">睡前三件事' + (allDone ? " · 晚安章蓋好了" : " · 做完蓋晚安章") + '</div><div class="morning">' + rows + "</div></div>" +
+      '<div class="card"><div style="font-size:15px;color:#F2B33D">明天醒來的第一步</div><div style="font-size:18px;margin:8px 0 4px">拉開窗簾，再帶狗狗出門</div><div class="soft" style="font-size:14px">已經幫你選好，明天不用想。</div></div>' +
       '<p style="text-align:center;margin-top:36px;line-height:1.7">夜裡的你，也是你。<br>但明天的你會感謝現在去睡的你。</p>' +
       '<p style="text-align:center"><a href="#day" class="soft" style="font-size:14px">看白天的畫面</a></p></div></div>';
   }
@@ -420,12 +426,12 @@
   /* ---------- 畫冊 ---------- */
   function viewGallery() {
     var n = revealed();
-    return '<div class="wrap">' + header("我的畫冊", "home", '<div class="date">第 ' + (S.page + 1) + " 張 · 已揭開 " + n + " / " + PIECES + " 片</div>") +
+    return '<div class="wrap">' + header("我的畫冊", "home", '<div class="date">第 ' + (S.page + 1) + " 張 · 已揭開 " + n + " / " + piecesOf(S.page) + " 片</div>") +
       '<section class="sec"><div class="card">' + puzzleHTML(-1) +
-      '<p style="font-size:13px;color:var(--soft);line-height:1.6;margin:12px 0 0">每蓋一個章，就揭開一片。拼完這一張，可以兌換一個往外走的獎勵。</p>' +
+      '<p style="font-size:13px;color:var(--soft);line-height:1.6;margin:12px 0 0">每蓋一個章，就揭開一片。拼完一張有小獎勵，拼完 4 張可以兌換一個往外走的大獎勵。</p>' +
       '<label class="btn ghost" style="cursor:pointer">' + (S.img ? "換一張畫" : "從相簿選一張你的畫") + '<input type="file" accept="image/*" id="pick" style="display:none"></label>' +
       '<p style="font-size:12px;color:var(--mute);margin:8px 0 0;text-align:center">照片只存在這支手機，不會上傳到任何地方</p>' +
-      (n >= PIECES ? '<button class="btn" data-gal="next">開始下一張</button>' : "") +
+      (n >= piecesOf(S.page) ? '<p style="font-size:14px;line-height:1.6;margin:10px 0 0">這一張拼完了！可以兌換一個小獎勵。' + ((S.page + 1) % 4 === 0 ? "這是第 " + (S.page + 1) + " 張，可以兌換一個往外走的大獎勵。" : "再拼 " + (4 - (S.page + 1) % 4) + " 張，可以兌換一個往外走的大獎勵。") + '</p><button class="btn" data-gal="next">開始下一張</button>' : "") +
       '<p class="toast" id="galmsg"></p></div></section></div>';
   }
   function pickImage(file) {

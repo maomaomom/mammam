@@ -162,3 +162,46 @@ h1, h2, .step-title, .quote p, .sheet h2{font-weight:900 !important}
 .nbox{background:#2A2D47;border-radius:14px;padding:12px}
 .nbox textarea{background:#1E2033;color:#F1EEF7;border-color:#4A4F7A}
 .night .btn.ghost-n{background:transparent;color:#F1EEF7;border:1.5px solid #6A6F9A}
+
+/* ===== 白天：風格 1（米白、深藍、珊瑚） ===== */
+:root{--night:#1F4E9A;--coral:#1F4E9A;--blue-d:#1F4E9A;--blue-l:#DCE8F8;--serif:"Noto Serif TC","Noto Serif CJK TC","Songti TC",serif}
+html,body{background:#F5F4F0}
+.hero{background:transparent;color:#1F4E9A;border-radius:0;padding:calc(env(safe-area-inset-top) + 18px) 20px 6px}
+.hero h1{color:#1F4E9A;margin:6px 0 4px}
+.hero .date{color:#2F2C3A}
+.back{color:#1F4E9A}
+.hero.home .toprow,.night .toprow{display:flex;justify-content:space-between;font-size:14px;color:#1F4E9A}
+.hero.home .illus{display:block;width:calc(100% + 20px);margin:6px -10px -36px}
+.quote{box-shadow:0 8px 20px rgba(31,78,154,.15)}
+.quote small{color:#D9654A}
+.quote p{color:#1F4E9A}
+.card{box-shadow:0 8px 20px rgba(31,78,154,.10);border-radius:20px}
+.sec-h .n{background:#D9654A}
+.sec-h b{color:#1F4E9A}
+.step-title{color:#1F4E9A}
+.btn{background:#1F4E9A}
+.btn.dark{background:#163B78}
+.mrow{background:#F3F6FB}
+.mrow.done .box{background:#1F4E9A}
+.tile.pz{background:#FBD9CD}
+.tile.th{background:#FCE9C4} .tile.th span{color:#6B4A0E}
+.preview-btn{background:rgba(31,78,154,.85)}
+.puzzle .pc{background:#1F4E9A;border-color:#3A67B3}
+/* ===== 晚上：風格 5（深綠、黃、米） ===== */
+.night{background:#12322D;color:#F1E4BE}
+html:has(.night),body:has(.night){background:#12322D}
+.night .toprow{color:#B9D86A;letter-spacing:2px}
+.night .ntitle{font-family:var(--serif);color:#F2B33D;font-size:36px;margin:8px 0 4px}
+.night .illus{display:block;width:calc(100% + 16px);margin:0 -8px 6px}
+.night .card{background:#1C4740;color:#F1E4BE}
+.night .soft{color:#E9DFC2}
+.nrow{background:#24574D;color:#F1E4BE}
+.nrow .box{border-color:#F2B33D}
+.nrow.done .box{background:#F2B33D}
+.nrow.done .t{color:#C9C1A4}
+.nbox{background:#163C36}
+.nbox textarea{background:#12322D;color:#F1E4BE;border-color:#3B5C55}
+.night .btn{background:#F2B33D;color:#12322D}
+.night .btn.ghost-n{background:transparent;color:#F1E4BE;border-color:#B9D86A}
+
+.preview-btn{top:auto !important;right:auto !important;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);opacity:.75}
