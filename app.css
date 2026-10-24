@@ -114,7 +114,7 @@ a{color:inherit}
 .hint{background:var(--mustard);border-radius:16px;padding:12px 14px;font-size:13px;line-height:1.6}
 .hint b{display:block;font-size:12px;color:var(--mustard-d)}
 /* thought */
-label.f{display:block;font-size:12px;font-weight:700;color:var(--lav-d);margin-bottom:6px}
+.f{display:block;font-size:12px;font-weight:700;color:var(--lav-d);margin-bottom:6px}
 textarea,input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px;font:inherit;font-size:16px;background:#fff;resize:none}
 input[type=range]{width:100%}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -135,3 +135,13 @@ input[type=range]{width:100%}
 .preview a,.preview button.pv{display:block;width:100%;text-align:left;padding:12px 14px;border-radius:12px;background:#fff;margin-bottom:6px;text-decoration:none;border:none;font-size:15px}
 .preview small{display:block;color:var(--mute);font-size:12px}
 .toast{font-size:13px;color:var(--coral-d);margin-top:8px}
+
+.tcard{display:flex;flex-direction:column;gap:18px}
+.fhint{font-size:12px;color:var(--mute);margin:0 0 6px;line-height:1.5}
+.fsub{display:block;font-size:13px;color:var(--soft);margin:8px 0 4px}
+.tlist{display:flex;flex-direction:column;gap:6px}
+.trow{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:10px 12px}
+.trow .say{font-size:15px;font-weight:700}
+.trow .nm{font-size:12px;color:var(--soft)}
+.trow .tp{font-size:13px;color:var(--lav-d);margin-top:4px;line-height:1.5}
+.trow.on{border-color:var(--lav-d);background:#F4F1FB}

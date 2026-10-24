@@ -113,10 +113,10 @@
   }
   function showDone(o) {
     var n = revealed();
-    var html = '<div class="sheet" role="dialog" aria-label="完成">' + sealSVG(today(), true) +
+    var html = '<div class="sheet" role="dialog" aria-label="完成">' + (o.noStamp ? "" : sealSVG(today(), true)) +
       "<h2>" + esc(o.title) + "</h2><p>" + esc(o.text) + "</p>" +
-      '<div class="mini-pz">' + puzzleHTML(o.flip) + "</div>" +
-      "<p><b>揭開了第 " + n + " 片 / " + PIECES + "</b></p>";
+      (o.noStamp ? "" : '<div class="mini-pz">' + puzzleHTML(o.flip) + "</div>" +
+      "<p><b>揭開了第 " + n + " 片 / " + PIECES + "</b></p>");
     if (o.pageDone) html += '<p class="toast">這一張拼圖完成了！可以兌換一個往外走的獎勵。</p>';
     if (o.choice) {
       html += '<div class="choice"><button class="btn dark" data-act="rest">今天到這裡就好</button><small>明天會出現下一步</small>' +
@@ -329,41 +329,57 @@
   }
 
   /* ---------- 想法偵探 ---------- */
-  var TD = { type: "", b1: 70, b2: 40 };
+  var TD = { types: {}, feel: {}, b1: 70, b2: 40 };
+  var FIELDS = {};
+  var TF = ["fact", "th", "yes", "no", "fr"];
+  function chipRow(list, sel, attr) {
+    return list.map(function (x, i) { return '<button class="chip' + (sel[i] ? " on" : "") + '" ' + attr + '="' + i + '">' + esc(x) + "</button>"; }).join("");
+  }
   function viewThought() {
-    var types = Object.keys(D.thinkingTypes).map(function (k) { return '<button class="chip' + (TD.type === k ? " on" : "") + '" data-type="' + k + '">' + k + "</button>"; }).join("");
-    var past = S.thoughts.length ? '<section class="sec"><div class="sec-h"><b>已結案的紀錄</b><span class="r">' + S.thoughts.length + ' 件</span></div><div class="list">' + S.thoughts.slice().reverse().slice(0, 5).map(function (x) { return '<div class="row"><span class="mid"><b>' + esc(x.fact || "（沒寫）") + "</b><span>" + esc(x.d) + " · " + esc(x.type || "") + " · " + x.b1 + "% → " + x.b2 + "%</span></span></div>"; }).join("") + '</div><button class="btn ghost" data-th="export">匯出我的紀錄</button></section>' : "";
-    return '<div class="wrap">' + header("想法偵探", "home", '<div class="date">腦袋又開始轉的時候，花 3 分鐘查一下案。只存在這支手機。</div>') +
-      '<section class="sec"><div class="card" style="display:flex;flex-direction:column;gap:14px">' +
-      '<div><label class="f" for="fact">1 · 發生了什麼（只寫事實）</label><textarea id="fact" rows="2" placeholder="我跟同學說話時，她沒有笑。"></textarea></div>' +
-      '<div><label class="f" for="th">2 · 腦中跑出的想法</label><textarea id="th" rows="2" placeholder="她一定覺得我很奇怪。"></textarea>' +
-      '<label class="f" for="b1" style="margin-top:8px">我有多相信：<span class="pct" id="b1v">' + TD.b1 + '%</span></label><input type="range" id="b1" min="0" max="100" step="10" value="' + TD.b1 + '"></div>' +
-      '<div><span class="f">3 · 這是哪一種「想太多」？</span><div class="chips">' + types + '</div><div class="chipdesc">' + (TD.type ? esc(D.thinkingTypes[TD.type]) : "") + "</div></div>" +
-      '<div><label class="f" for="fr">4 · 如果是好朋友遇到，我會跟她說</label><textarea id="fr" rows="2" placeholder="她可能只是累了，或在想自己的事。"></textarea></div>' +
-      '<div><label class="f" for="b2">5 · 現在還相信多少：<span class="pct" id="b2v">' + TD.b2 + '%</span></label><input type="range" id="b2" min="0" max="100" step="10" value="' + TD.b2 + '"></div>' +
-      '<button class="btn" data-th="save">結案，蓋章</button></div></section>' + past + "</div>";
+    var types = D.thinkingTypes.map(function (x, i) {
+      var on = !!TD.types[i];
+      return '<button class="trow' + (on ? " on" : "") + '" data-type="' + i + '"><span class="say">' + esc(x.say) + '</span><span class="nm">' + esc(x.name) + "</span>" + (on ? '<span class="tp">' + esc(x.tip) + "</span>" : "") + "</button>";
+    }).join("");
+    var past = S.thoughts.length ? '<section class="sec"><div class="sec-h"><b>已結案的紀錄</b><span class="r">' + S.thoughts.length + ' 件</span></div><div class="list">' + S.thoughts.slice().reverse().slice(0, 5).map(function (x) { return '<div class="row"><span class="mid"><b>' + esc(x.fact || "（沒寫）") + "</b><span>" + esc(x.d) + " · 相信程度 " + x.b1 + "% → " + x.b2 + "%</span></span></div>"; }).join("") + '</div><button class="btn ghost" data-th="export">匯出我的紀錄</button></section>' : "";
+    return '<div class="wrap">' + header("想法偵探", "home", '<div class="date">腦袋停不下來的時候，花 3 分鐘查一下案。<br>寫的內容只存在這支手機，誰都看不到。</div>') +
+      '<section class="sec"><div class="card tcard">' +
+      '<div><label class="f" for="fact">1 · 發生了什麼？</label><p class="fhint">只寫看得到、聽得到的事，像監視器拍到的那樣。</p><textarea id="fact" rows="2" placeholder="例如：我跟同學說話時，她沒有笑。"></textarea></div>' +
+      '<div><label class="f" for="th">2 · 那時候，腦中冒出什麼話？</label><textarea id="th" rows="2" placeholder="例如：她一定覺得我很奇怪。"></textarea>' +
+      '<span class="f" style="margin-top:10px">心情是</span><div class="chips">' + chipRow(D.feelings, TD.feel, "data-feel") + "</div>" +
+      '<label class="f" for="b1" style="margin-top:10px">這句話，我有多相信：<span class="pct" id="b1v">' + TD.b1 + '%</span></label><input type="range" id="b1" min="0" max="100" step="10" value="' + TD.b1 + '"></div>' +
+      '<div><span class="f">3 · 這句話，像下面哪一種？</span><p class="fhint">可以選不只一個。點一下會出現說明。</p><div class="tlist">' + types + "</div></div>" +
+      '<div><span class="f">4 · 找證據</span><label class="fsub" for="yes">支持這句話的事實</label><textarea id="yes" rows="2" placeholder="例如：她那時候沒有看我。"></textarea>' +
+      '<label class="fsub" for="no">不支持這句話的事實</label><textarea id="no" rows="2" placeholder="例如：她後來還是有回我訊息。她那天看起來很累。"></textarea></div>' +
+      '<div><label class="f" for="fr">5 · 如果是好朋友遇到這件事，我會跟她說</label><textarea id="fr" rows="2" placeholder="例如：她可能只是累了，或在想自己的事，不一定跟你有關。"></textarea></div>' +
+      '<div><label class="f" for="b2">6 · 現在，還相信那句話多少？<span class="pct" id="b2v">' + TD.b2 + '%</span></label><input type="range" id="b2" min="0" max="100" step="10" value="' + TD.b2 + '"><p class="fhint">有降一點就很好了。沒降也沒關係，寫下來本身就有幫助。</p></div>' +
+      '<button class="btn" data-th="save">結案，蓋章</button><button class="btn ghost" data-th="box">現在不想寫，先放進煩惱盒</button></div></section>' + past + "</div>";
   }
   function onThought(e) {
     var c = e.target.closest("[data-type]");
-    if (c) { keepFields(); TD.type = c.getAttribute("data-type"); render(); restoreFields(); return; }
+    if (c) { keepFields(); var i = +c.getAttribute("data-type"); TD.types[i] = !TD.types[i]; render(); restoreFields(); return; }
+    var f = e.target.closest("[data-feel]");
+    if (f) { keepFields(); var j = +f.getAttribute("data-feel"); TD.feel[j] = !TD.feel[j]; render(); restoreFields(); return; }
     var b = e.target.closest("[data-th]"); if (!b) return;
     var a = b.getAttribute("data-th");
-    if (a === "save") {
-      var rec = { d: today(), fact: val("fact"), thought: val("th"), type: TD.type, friend: val("fr"), b1: TD.b1, b2: TD.b2 };
-      S.thoughts.push(rec); TD = { type: "", b1: 70, b2: 40 }; FIELDS = {};
+    if (a === "save" || a === "box") {
+      keepFields();
+      var types = D.thinkingTypes.filter(function (_, i) { return TD.types[i]; }).map(function (x) { return x.name; });
+      var feels = D.feelings.filter(function (_, i) { return TD.feel[i]; });
+      var rec = { d: today(), fact: FIELDS.fact || "", thought: FIELDS.th || "", feel: feels.join("、"), types: types.join("、"), yes: FIELDS.yes || "", no: FIELDS.no || "", friend: FIELDS.fr || "", b1: TD.b1, b2: TD.b2, box: a === "box" };
+      S.thoughts.push(rec); TD = { types: {}, feel: {}, b1: 70, b2: 40 }; FIELDS = {};
+      if (a === "box") { save(); showDone({ title: "先放著。", text: "煩惱放進盒子裡了。想處理的時候再打開，現在可以先做別的事。", flip: -1, pageDone: false, noStamp: true }); return; }
       var r = addStamp("thought");
       showDone({ title: "結案了。", text: "把想法寫下來，它就沒那麼大聲了。", flip: r.flip, pageDone: r.pageDone });
     }
     if (a === "export") {
-      var txt = S.thoughts.map(function (x) { return x.d + "\n事實：" + x.fact + "\n想法：" + x.thought + "（" + x.b1 + "%）\n類型：" + x.type + "\n好朋友會說：" + x.friend + "\n現在：" + x.b2 + "%\n"; }).join("\n");
+      var txt = S.thoughts.map(function (x) { return x.d + (x.box ? "（煩惱盒）" : "") + "\n發生了什麼：" + x.fact + "\n腦中的話：" + x.thought + "（相信 " + x.b1 + "%）\n心情：" + (x.feel || "") + "\n像哪一種：" + (x.types || x.type || "") + "\n支持的事實：" + (x.yes || "") + "\n不支持的事實：" + (x.no || "") + "\n好朋友會說：" + x.friend + "\n現在相信：" + x.b2 + "%\n"; }).join("\n");
       if (navigator.share) { navigator.share({ title: "想法偵探紀錄", text: txt }).catch(function () {}); }
       else if (navigator.clipboard) { navigator.clipboard.writeText(txt); alertMsg("已複製，可以貼到備忘錄保存。"); }
     }
   }
-  var FIELDS = {};
   function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; }
-  function keepFields() { ["fact", "th", "fr"].forEach(function (id) { FIELDS[id] = val(id); }); }
-  function restoreFields() { ["fact", "th", "fr"].forEach(function (id) { var el = document.getElementById(id); if (el && FIELDS[id]) el.value = FIELDS[id]; }); }
+  function keepFields() { TF.forEach(function (id) { var v = val(id); if (document.getElementById(id)) FIELDS[id] = v; }); }
+  function restoreFields() { TF.forEach(function (id) { var el = document.getElementById(id); if (el && FIELDS[id]) el.value = FIELDS[id]; }); }
   function alertMsg(m) { var p = document.createElement("p"); p.className = "toast"; p.textContent = m; app.querySelector(".wrap").appendChild(p); }
 
   /* ---------- 路由與事件 ---------- */
