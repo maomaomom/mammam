@@ -19,10 +19,7 @@
 
   /* ---------- 儲存 ---------- */
   function seed() {
-    var s = { stamps: [], morning: {}, wake: {}, course: { A: 1, B: 0 }, smaller: {}, rest: {}, extra: {}, img: null, page: 0, thoughts: [], night: false, socialDone: {} };
-    // 範例：過去幾天的印章，讓預覽看起來有內容
-    var offs = [6, 4, 4, 3, 1];
-    offs.forEach(function (o) { var d = new Date(); d.setDate(d.getDate() - o); s.stamps.push({ d: dkey(d), k: "demo" }); });
+    var s = { stamps: [], morning: {}, wake: {}, course: {}, smaller: {}, rest: {}, extra: {}, img: null, page: 0, thoughts: [], night: false, socialDone: {} };
     return s;
   }
   var mem = null;
@@ -618,6 +615,15 @@
 
   /* ---------- 預覽（只給媽媽測試用） ---------- */
   var pv = document.getElementById("preview");
+  var pvBtn = document.getElementById("previewBtn");
+  function showPv() { var on = false; try { on = localStorage.getItem(KEY + "-pv") === "1"; } catch (e) {} pvBtn.hidden = !on; }
+  var taps = 0, tapT = 0;
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".toprow")) return;
+    var now = Date.now(); taps = now - tapT < 800 ? taps + 1 : 1; tapT = now;
+    if (taps >= 5) { taps = 0; try { localStorage.setItem(KEY + "-pv", localStorage.getItem(KEY + "-pv") === "1" ? "0" : "1"); } catch (e2) {} showPv(); }
+  });
+  showPv();
   document.getElementById("previewBtn").addEventListener("click", function () {
     pv.innerHTML = '<div class="sheet"><h2 style="text-align:center">預覽所有畫面</h2><p style="text-align:center;margin-bottom:14px">測試版才有這個按鈕，正式版會拿掉</p>' +
       '<p style="text-align:center;margin:0 0 12px;font-size:13px">' + (function () { var c = null; try { c = localStorage.getItem(KEY + "-quotes"); } catch (e) {} return c ? "心靈雞湯：已讀到試算表，共 " + JSON.parse(c).length + " 句" : "心靈雞湯：還沒讀到試算表，目前用內建句子"; })() + '</p>' +

@@ -208,3 +208,5 @@ html:has(.night),body:has(.night){background:#12322D}
 
 .seal{width:210px !important;height:210px !important}
 @keyframes thump{to{transform:scale(1) rotate(-6deg);opacity:1}}
+
+.preview-btn[hidden]{display:none !important}
