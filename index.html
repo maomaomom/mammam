@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>小步日記</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="小步日記">
+<meta name="theme-color" content="#23264A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root { --ink:#22223B; --night:#23264A; --cream:#FFF9F0; --coral:#C84B31; --soft:#4A4652; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background: var(--cream); color: var(--ink);
+    font-family: -apple-system, "PingFang TC", "Noto Sans TC", system-ui, sans-serif; }
+  header { background: var(--night); color:#fff; padding: calc(env(safe-area-inset-top) + 28px) 22px 22px;
+    border-radius: 0 0 28px 28px; }
+  header small { color:#C9CDEB; font-size:13px; }
+  header h1 { margin:4px 0 0; font-size:28px; }
+  main { padding: 20px; display:flex; flex-direction:column; gap:16px; max-width:480px; margin:0 auto; }
+  .card { background:#fff; border-radius:20px; padding:18px; box-shadow:0 6px 20px rgba(35,38,74,.10); }
+  .card h2 { margin:0 0 6px; font-size:17px; }
+  .card p { margin:0; font-size:14px; color:var(--soft); line-height:1.6; }
+  button { width:100%; min-height:52px; border:none; border-radius:26px; background:var(--coral); color:#fff;
+    font: inherit; font-size:17px; font-weight:700; margin-top:14px; cursor:pointer; }
+  button.ghost { background:#fff; color:var(--ink); border:1.5px solid #E6DED0; font-weight:400; font-size:15px; }
+  .count { font-size:44px; font-weight:800; color:var(--coral); text-align:center; margin-top:8px; }
+  .stamp { width:90px; height:90px; margin:10px auto 0; border-radius:50%; border:5px solid var(--coral);
+    display:flex; align-items:center; justify-content:center; transform:rotate(-8deg) scale(0); transition:transform .35s cubic-bezier(.3,1.6,.5,1); }
+  .stamp.on { transform:rotate(-8deg) scale(1); }
+  .check { display:flex; gap:10px; align-items:center; font-size:14px; padding:6px 0; }
+  .dot { width:14px; height:14px; border-radius:7px; flex-shrink:0; background:#D6CDBE; }
+  .dot.ok { background:#2E8B57; }
+</style>
+</head>
+<body>
+<header>
+  <small>測試版 · 只給媽媽試用</small>
+  <h1>小步日記</h1>
+</header>
+<main>
+  <section class="card">
+    <h2>測試 1：蓋章會不會被記住</h2>
+    <p>按幾次蓋章，然後完全關掉這個 App，再打開。數字還在，就代表她的紀錄能存在手機裡。</p>
+    <div class="stamp" id="stamp" aria-hidden="true">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="#C84B31"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg>
+    </div>
+    <div class="count" id="count">0</div>
+    <button id="btn">做到了，蓋章</button>
+    <button class="ghost" id="reset">歸零</button>
+  </section>
+
+  <section class="card">
+    <h2>測試 2：像不像 App</h2>
+    <div class="check"><span class="dot" id="d1"></span><span id="t1">檢查中…</span></div>
+    <div class="check"><span class="dot" id="d2"></span><span id="t2">檢查中…</span></div>
+  </section>
+</main>
+<script>
+  const KEY = 'mammam-test-stamps';
+  let n = 0, storageOK = true;
+  try { n = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) { storageOK = false; }
+  const countEl = document.getElementById('count');
+  const stampEl = document.getElementById('stamp');
+  function show() { countEl.textContent = n; stampEl.classList.toggle('on', n > 0); }
+  function save() { try { localStorage.setItem(KEY, String(n)); } catch (e) { storageOK = false; } }
+  document.getElementById('btn').onclick = () => {
+    n += 1; save(); stampEl.classList.remove('on'); void stampEl.offsetWidth; show();
+  };
+  document.getElementById('reset').onclick = () => { n = 0; save(); show(); };
+  show();
+
+  const standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  document.getElementById('d1').classList.toggle('ok', standalone);
+  document.getElementById('t1').textContent = standalone
+    ? '已從主畫面開啟，全螢幕，像 App 一樣'
+    : '目前在 Safari 裡。請按「分享」→「加入主畫面」，再從主畫面打開';
+  document.getElementById('d2').classList.toggle('ok', storageOK);
+  document.getElementById('t2').textContent = storageOK ? '手機可以儲存紀錄' : '這個瀏覽器不能儲存紀錄（請用 Safari）';
+</script>
+</body>
+</html>
