@@ -52,7 +52,7 @@
       '<g filter="url(#f' + id + ')" fill="none" stroke="' + C + '"><circle cx="100" cy="100" r="93" stroke-width="10"/><circle cx="100" cy="100" r="60" stroke-width="3.2"/></g>' +
       '<g filter="url(#f' + id + ')" fill="' + C + '" font-weight="900">' +
         '<text font-size="15" letter-spacing="2" text-anchor="middle"><textPath href="#t' + id + '" startOffset="50%">一次一小步 · 慢慢日記</textPath></text>' +
-        '<text font-size="15" letter-spacing="2" text-anchor="middle"><textPath href="#b' + id + '" startOffset="50%">認真寫願望 · 每一天</textPath></text>' +
+        '<text font-size="15" letter-spacing="2" text-anchor="middle"><textPath href="#b' + id + '" startOffset="50%">今天也做到了</textPath></text>' +
         star(21, 100) + star(179, 100) +
         '<text x="100" y="128" text-anchor="middle" font-size="27">做到了</text>' +
         '<path d="M68 135 Q100 131 132 134" fill="none" stroke="' + C + '" stroke-width="2.4" stroke-linecap="round"/>' +
