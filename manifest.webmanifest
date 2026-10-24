@@ -1,6 +1,6 @@
 {
-  "name": "小步日記",
-  "short_name": "小步日記",
+  "name": "慢慢日記",
+  "short_name": "慢慢日記",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

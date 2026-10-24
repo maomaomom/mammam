@@ -45,7 +45,7 @@
       '<defs><filter id="f' + id + '"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="' + (uid % 9) + '"/><feDisplacementMap in="SourceGraphic" scale="5"/></filter>' +
       '<path id="p' + id + '" d="M100,100 m-71,0 a71,71 0 1,1 142,0 a71,71 0 1,1 -142,0"/></defs>' +
       '<g filter="url(#f' + id + ')" fill="none" stroke="#C84B31"><circle cx="100" cy="100" r="92" stroke-width="7"/><circle cx="100" cy="100" r="56" stroke-width="3"/></g>' +
-      '<g filter="url(#f' + id + ')" fill="#C84B31"><text font-size="16" font-weight="700" letter-spacing="3"><textPath href="#p' + id + '">一次一小步 · 小步日記 · 一次一小步 · 小步日記 ·</textPath></text>' +
+      '<g filter="url(#f' + id + ')" fill="#C84B31"><text font-size="16" font-weight="700" letter-spacing="3"><textPath href="#p' + id + '">一次一小步 · 慢慢日記 · 一次一小步 · 慢慢日記 ·</textPath></text>' +
       '<text x="100" y="98" text-anchor="middle" font-size="30" font-weight="900">做到了</text>' +
       '<text x="100" y="128" text-anchor="middle" font-size="19" font-weight="700" letter-spacing="1">' + label + '</text></g></svg>';
   }
