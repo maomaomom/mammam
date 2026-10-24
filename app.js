@@ -38,17 +38,27 @@
 
   /* ---------- 印章圖 ---------- */
   var uid = 0;
-  function sealSVG(dateStr, big) {
+  var SEAL_COLORS = ["#2B5FB4", "#23593F", "#C9533A", "#6A4FA3", "#B5761F", "#1F7A82"];
+  function sealSVG(dateStr, big, color) {
     uid += 1;
-    var id = "s" + uid, d = parse(dateStr);
-    var label = (d.getMonth() + 1) + "." + d.getDate();
+    var id = "s" + uid, d = parse(dateStr), C = color || SEAL_COLORS[0];
+    var label = (d.getMonth() + 1) + "." + pad(d.getDate());
+    var star = function (x, y) { var p = []; for (var i = 0; i < 10; i++) { var r = i % 2 ? 3.4 : 8, a = -Math.PI / 2 + i * Math.PI / 5; p.push((x + r * Math.cos(a)).toFixed(1) + "," + (y + r * Math.sin(a)).toFixed(1)); } return '<polygon points="' + p.join(" ") + '"/>'; };
     return '<svg viewBox="0 0 200 200" class="' + (big ? "seal" : "") + '" role="img" aria-label="做到了的印章">' +
-      '<defs><filter id="f' + id + '"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="' + (uid % 9) + '"/><feDisplacementMap in="SourceGraphic" scale="5"/></filter>' +
-      '<path id="p' + id + '" d="M100,100 m-71,0 a71,71 0 1,1 142,0 a71,71 0 1,1 -142,0"/></defs>' +
-      '<g filter="url(#f' + id + ')" fill="none" stroke="#C84B31"><circle cx="100" cy="100" r="92" stroke-width="7"/><circle cx="100" cy="100" r="56" stroke-width="3"/></g>' +
-      '<g filter="url(#f' + id + ')" fill="#C84B31"><text font-size="16" font-weight="700" letter-spacing="3"><textPath href="#p' + id + '">一次一小步 · 慢慢日記 · 一次一小步 · 慢慢日記 ·</textPath></text>' +
-      '<text x="100" y="98" text-anchor="middle" font-size="30" font-weight="900">做到了</text>' +
-      '<text x="100" y="128" text-anchor="middle" font-size="19" font-weight="700" letter-spacing="1">' + label + '</text></g></svg>';
+      '<defs><filter id="f' + id + '"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="' + (uid % 9) + '"/><feDisplacementMap in="SourceGraphic" scale="2"/></filter>' +
+      '<filter id="c' + id + '"><feFlood flood-color="' + C + '"/><feComposite in2="SourceAlpha" operator="in"/></filter>' +
+      '<path id="t' + id + '" d="M27,100 A73,73 0 0,1 173,100"/><path id="b' + id + '" d="M16,100 A84,84 0 0,0 184,100"/></defs>' +
+      '<circle cx="100" cy="100" r="96" fill="#FBF8F1"/>' +
+      '<g filter="url(#f' + id + ')" fill="none" stroke="' + C + '"><circle cx="100" cy="100" r="93" stroke-width="10"/><circle cx="100" cy="100" r="60" stroke-width="3.2"/></g>' +
+      '<g filter="url(#f' + id + ')" fill="' + C + '" font-weight="900">' +
+        '<text font-size="15" letter-spacing="2" text-anchor="middle"><textPath href="#t' + id + '" startOffset="50%">一次一小步 · 慢慢日記</textPath></text>' +
+        '<text font-size="15" letter-spacing="2" text-anchor="middle"><textPath href="#b' + id + '" startOffset="50%">認真寫願望 · 每一天</textPath></text>' +
+        star(21, 100) + star(179, 100) +
+        '<text x="100" y="128" text-anchor="middle" font-size="27">做到了</text>' +
+        '<path d="M68 135 Q100 131 132 134" fill="none" stroke="' + C + '" stroke-width="2.4" stroke-linecap="round"/>' +
+        '<text x="100" y="151" text-anchor="middle" font-size="14" letter-spacing="1">' + label + "</text></g>" +
+      '<image href="img/badge-fill.png" x="46" y="45" width="108" height="55"/>' +
+      '<image href="img/badge-ink.png" x="46" y="45" width="108" height="55" filter="url(#c' + id + ')"/></svg>';
   }
   function miniSeal(color) {
     return '<svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true"><circle cx="19" cy="19" r="19" fill="' + color + '"/><circle cx="19" cy="19" r="13" fill="none" stroke="#fff" stroke-width="1.6" opacity=".9"/><path d="M13 19.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -111,7 +121,7 @@
 
   /* ---------- 蓋章 ---------- */
   function addStamp(kind) {
-    S.stamps.push({ d: today(), k: kind });
+    S.stamps.push({ d: today(), k: kind, c: SEAL_COLORS[Math.floor(Math.random() * SEAL_COLORS.length)] });
     var n = revealed();
     var pageDone = n >= piecesOf(S.page);
     save();
@@ -127,7 +137,7 @@
   }
   function showDone(o) {
     var n = revealed();
-    var html = '<div class="sheet" role="dialog" aria-label="完成">' + (o.noStamp ? "" : sealSVG(today(), true)) +
+    var html = '<div class="sheet" role="dialog" aria-label="完成">' + (o.noStamp ? "" : sealSVG(today(), true, (S.stamps[S.stamps.length - 1] || {}).c)) +
       "<h2>" + esc(o.title) + "</h2><p>" + esc(o.text) + "</p>" +
       (o.noStamp ? "" : '<div class="mini-pz">' + puzzleHTML(o.flip) + "</div>" +
       "<p><b>揭開了第 " + n + " 片 / " + piecesOf(S.page) + "</b></p>");

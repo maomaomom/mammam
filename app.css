@@ -205,3 +205,6 @@ html:has(.night),body:has(.night){background:#12322D}
 .night .btn.ghost-n{background:transparent;color:#F1E4BE;border-color:#B9D86A}
 
 .preview-btn{top:auto !important;right:auto !important;left:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);opacity:.75}
+
+.seal{width:210px !important;height:210px !important}
+@keyframes thump{to{transform:scale(1) rotate(-6deg);opacity:1}}
