@@ -1,5 +1,5 @@
 :root{
-  --ink:#22223B; --soft:#4A4652; --mute:#6B6880;
+  --ink:#1A1A2E; --soft:#2F2C3A; --mute:#3D3A4A;
   --night:#23264A; --night2:#34386A; --cream:#FFF9F0; --paper:#FFFFFF; --line:#E6DED0;
   --coral:#C84B31; --coral-l:#FAD4C8; --coral-d:#7A2E1C;
   --blue-l:#CFE3F7; --blue-d:#24476B;
@@ -15,10 +15,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 a{color:inherit}
 .wrap{max-width:480px;margin:0 auto;padding-bottom:calc(env(safe-area-inset-bottom) + 90px)}
 .hero{background:var(--night);color:#fff;padding:calc(env(safe-area-inset-top) + 20px) 20px 20px;border-radius:0 0 30px 30px;position:relative;overflow:hidden}
-.hero .date{font-size:13px;color:#C9CDEB}
+.hero .date{font-size:14px;color:#E6E8F8}
 .hero h1{margin:2px 0 12px;font-size:30px;font-weight:900;letter-spacing:1px}
 .hero .win{position:absolute;right:-8px;top:calc(env(safe-area-inset-top) + 12px);opacity:.95}
-.back{display:inline-flex;align-items:center;gap:4px;font-size:14px;color:#C9CDEB;text-decoration:none;min-height:32px;background:none;border:none;padding:0}
+.back{display:inline-flex;align-items:center;gap:4px;font-size:15px;color:#E6E8F8;text-decoration:none;min-height:32px;background:none;border:none;padding:0}
 .quote{background:#fff;color:var(--ink);border-radius:20px 20px 20px 6px;padding:16px 18px;position:relative;z-index:1;box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .quote small{display:block;font-size:13px;font-weight:700;color:var(--coral);letter-spacing:1px;margin-bottom:8px}
 .quote p{margin:0;font-size:21px;font-weight:800;line-height:1.55;color:#1A1A2E}
@@ -105,7 +105,7 @@ a{color:inherit}
 .steps .st.done .tx{color:var(--mute);text-decoration:line-through}
 .steps .st.cur{border:2px solid var(--green-d)}
 .steps .st.cur .num{background:var(--green-d);color:#fff}
-.steps .st.lock{background:transparent;border:1.5px dashed #D3CCC1;color:#9A95A6}
+.steps .st.lock{background:transparent;border:1.5px dashed #D3CCC1;color:#4A4658}
 .steps .st.lock .num{border:1.5px dashed #C9BFAE}
 .steps .tx{font-size:15px;line-height:1.5}
 .steps .sub{font-size:12px;color:var(--green-d);margin-top:2px}
@@ -145,3 +145,12 @@ input[type=range]{width:100%}
 .trow .nm{font-size:12px;color:var(--soft)}
 .trow .tp{font-size:13px;color:var(--lav-d);margin-top:4px;line-height:1.5}
 .trow.on{border-color:var(--lav-d);background:#F4F1FB}
+
+/* 全部文字粗黑 */
+body, body *{font-weight:700 !important}
+h1, h2, .step-title, .quote p, .sheet h2{font-weight:900 !important}
+.night .soft{color:#E2DEEE}
+::placeholder{color:#8A8494}
+.sec-h b{font-size:18px;font-weight:900 !important}
+.mrow .box{border-color:#8E8676}
+.week .c{border-color:#A79F90}

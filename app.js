@@ -245,9 +245,9 @@
     return '<div class="night"><div class="wrap" style="padding:calc(env(safe-area-inset-top) + 40px) 20px 90px">' +
       '<div class="soft" style="font-size:14px">' + new Date().getHours() + ":" + pad(new Date().getMinutes()) + "</div>" +
       '<h1 style="font-size:30px;margin:6px 0">今天收工了。</h1><p class="soft" style="margin:0 0 20px">今天蓋了 ' + n + " 個章。" + (n ? "夠了。" : "明天再來就好。") + "</p>" +
-      '<div class="card" style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#C9D0F5">睡前一小步</div><div style="font-size:19px;margin:8px 0">把手機放到書桌上充電</div>' +
+      '<div class="card" style="margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:#DDE2FF">睡前一小步</div><div style="font-size:19px;margin:8px 0">把手機放到書桌上充電</div>' +
       (phone ? '<p class="soft" style="margin:0">放好了。晚安。</p>' : '<button class="btn" data-night="phone">放好了，晚安</button>') + "</div>" +
-      '<div class="card"><div style="font-size:13px;font-weight:700;color:#C9D0F5">明天醒來的第一步</div><div style="font-size:17px;margin:8px 0 4px">拉開窗簾，再帶狗狗出門</div><div class="soft" style="font-size:13px">已經幫你選好，明天不用想。</div></div>' +
+      '<div class="card"><div style="font-size:13px;font-weight:700;color:#DDE2FF">明天醒來的第一步</div><div style="font-size:17px;margin:8px 0 4px">拉開窗簾，再帶狗狗出門</div><div class="soft" style="font-size:13px">已經幫你選好，明天不用想。</div></div>' +
       '<p style="text-align:center;margin-top:40px;line-height:1.7">夜裡的你，也是你。<br>但明天的你會感謝現在去睡的你。</p></div></div>';
   }
 
