@@ -155,7 +155,7 @@
     try { var c = JSON.parse(localStorage.getItem(KEY + "-quotes") || "null"); if (c && c.length) return c; } catch (e) {}
     return D.quotes;
   }
-  function quoteOfDay() { var q = quoteList(), d = parse(today()); var n = Math.round(d / 86400000); return q[((n % q.length) + q.length) % q.length]; }
+  function quoteOfDay() { var q = quoteList(), d = parse(today()); var n = Math.round(d / 86400000) + (S.qShift || 0); return q[((n % q.length) + q.length) % q.length]; }
   function parseCSV(text) {
     var rows = [], row = [], f = "", q = false;
     for (var i = 0; i < text.length; i++) {
@@ -588,6 +588,8 @@
   var pv = document.getElementById("preview");
   document.getElementById("previewBtn").addEventListener("click", function () {
     pv.innerHTML = '<div class="sheet"><h2 style="text-align:center">預覽所有畫面</h2><p style="text-align:center;margin-bottom:14px">測試版才有這個按鈕，正式版會拿掉</p>' +
+      '<p style="text-align:center;margin:0 0 12px;font-size:13px">' + (function () { var c = null; try { c = localStorage.getItem(KEY + "-quotes"); } catch (e) {} return c ? "心靈雞湯：已讀到試算表，共 " + JSON.parse(c).length + " 句" : "心靈雞湯：還沒讀到試算表，目前用內建句子"; })() + '</p>' +
+      '<button class="pv" data-pv="nextq">換下一句心靈雞湯看看<small>只是預覽用，確認試算表的句子有進來</small></button>' +
       '<a href="#home">主畫面<small>今日一句、早晨三件事、今天的一步、這週</small></a>' +
       '<a href="#map">期中地圖<small>兩週時間軸、每一科分類</small></a>' +
       '<a href="#setup">填我的科目<small>她自己填科目和考試日期</small></a>' +
@@ -607,6 +609,7 @@
     if (!b) { if (e.target === pv) pv.hidden = true; return; }
     var k = b.getAttribute("data-pv");
     if (k === "night") { S.night = !S.night; save(); location.hash = "#home"; }
+    if (k === "nextq") { S.qShift = (S.qShift || 0) + 1; save(); location.hash = "#home"; }
     if (k === "reset") { S = seed(); save(); location.hash = "#home"; }
     pv.hidden = true; render();
   });

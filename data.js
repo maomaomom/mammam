@@ -1,7 +1,7 @@
 // 範例內容。之後會改成從媽媽的 Google 試算表讀取。
 window.APP_DATA = {
   // 媽媽的心靈雞湯試算表（發布到網路的 CSV 連結）。空白時使用下面的內建句子。
-  quotesCSV: "",
+  quotesCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRNokRAOst5Reqw66mZeX9F2K1igUIZhJdNJA_sni7dVvtadm5dQ2Fd6oTa9YZ-20BmxvMCy5wP_kLQ/pub?gid=0&single=true&output=csv",
   quotes: [
     { text: "門不用一次打開。先開一條縫，光就會自己進來。", from: "一個關心你的人" },
     { text: "主角也不是第一集就會飛的。", from: "慢慢日記" },
