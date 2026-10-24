@@ -150,7 +150,52 @@
   function closeModal() { modal.hidden = true; modal.innerHTML = ""; render(); }
 
   /* ---------- 畫面：主畫面 ---------- */
-  function quoteOfDay() { var d = parse(today()); return D.quotes[(d.getDate() + d.getMonth()) % D.quotes.length]; }
+  /* 心靈雞湯：先用快取或內建句子，再從媽媽的試算表更新 */
+  function quoteList() {
+    try { var c = JSON.parse(localStorage.getItem(KEY + "-quotes") || "null"); if (c && c.length) return c; } catch (e) {}
+    return D.quotes;
+  }
+  function quoteOfDay() { var q = quoteList(), d = parse(today()); var n = Math.round(d / 86400000); return q[((n % q.length) + q.length) % q.length]; }
+  function parseCSV(text) {
+    var rows = [], row = [], f = "", q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === ",") { row.push(f); f = ""; }
+      else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+      else f += ch;
+    }
+    if (f || row.length) { row.push(f); rows.push(row); }
+    return rows;
+  }
+  function loadQuotes() {
+    if (!D.quotesCSV) return;
+    fetch(D.quotesCSV + (D.quotesCSV.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now()).then(function (r) { return r.text(); }).then(function (txt) {
+      var rows = parseCSV(txt).slice(1).filter(function (r) { return r[0] && r[0].trim(); });
+      var list = rows.filter(function (r) { return !r[2] || /^(v|V|✓|是|放入|TRUE|true|1)$/.test(r[2].trim()); })
+        .map(function (r) { return { text: r[0].trim(), from: (r[1] || "").trim() || "一個關心你的人" }; });
+      if (!list.length) return;
+      var old = null; try { old = localStorage.getItem(KEY + "-quotes"); localStorage.setItem(KEY + "-quotes", JSON.stringify(list)); } catch (e) {}
+      if (old !== JSON.stringify(list)) render();
+    }).catch(function () {});
+  }
+
+  /* 分享這週給媽媽：只有數字，不含任何私密內容 */
+  function weekSummary() {
+    var days = {}, cnt = { all: 0, morning: 0, step: 0, night: 0 };
+    for (var j = 0; j < 7; j++) { var dd = new Date(); dd.setDate(dd.getDate() - j); days[dkey(dd)] = true; }
+    S.stamps.forEach(function (s) { if (!days[s.d] || s.k === "demo") return; cnt.all++; if (cnt[s.k] !== undefined) cnt[s.k]++; });
+    var steps = 0, total = 0; courses().forEach(function (c) { if (c.tier === "first") { steps += Math.min(S.course[c.id] || 0, c.steps.length); total += c.steps.length; } });
+    var wakes = Object.keys(days).map(function (k) { return S.wake[k]; }).filter(Boolean);
+    return "慢慢日記 · 這一週\n" +
+      "蓋了 " + cnt.all + " 個章\n" +
+      "早晨三件事：做到 " + cnt.morning + " 天\n" +
+      "今天的一步：做到 " + cnt.step + " 次\n" +
+      "晚安章：" + cnt.night + " 天\n" +
+      (total ? "期中「先顧」的科目：走了 " + steps + " / " + total + " 步\n" : "") +
+      (wakes.length ? "早上開始的時間：" + wakes.join("、") + "\n" : "");
+  }
   function header(title, backTo, sub) {
     var t = new Date();
     return '<header class="hero">' + (backTo ? "" : WIN) +
@@ -352,7 +397,8 @@
       lineCard("作息線", "t-blue", "#24476B", "#CFE3F7", L.routine.end, L.routine.stages.length, L.routine.at, L.routine.stages[L.routine.at] + "完成早晨三件事", '<div style="font-size:13px;color:var(--soft);margin-top:4px">這週做到 ' + wk + " 天 · 穩定一週後，可以試試 " + L.routine.stages[L.routine.at + 1] + "</div>") +
       lineCard("人際線", "t-coral", "#7A2E1C", "#FAD4C8", L.social.end, L.social.steps.length, L.social.at, L.social.steps[L.social.at], '<div style="font-size:12px;color:var(--mute);margin-top:4px">第 5 步以後，等作息線走進教室才會打開</div>') +
       lineCard("學業線", "t-green", "#1F5A3A", "#CDEBD9", L.study.end, L.study.steps.length, L.study.at, "期中衝刺 · 每天一個課程小步", '<div style="font-size:13px;color:var(--soft);margin-top:4px">課程小步已完成 ' + studyDone + ' 步</div><a class="link" href="#map">看期中地圖 →</a>') +
-      '<div class="hint"><b>今天的一步從哪一條來？</b>系統會幫你選。期中前多半是學業線，每週也會有兩次人際線。</div></section></div>';
+      '<div class="hint"><b>今天的一步從哪一條來？</b>系統會幫你選。期中前多半是學業線，每週也會有兩次人際線。</div>' +
+      '<div class="card" style="margin-top:12px"><div style="font-size:16px;font-weight:900">分享這週給媽媽</div><p style="margin:6px 0 0;font-size:14px;color:var(--soft);line-height:1.6">只會傳出蓋章的次數和起床時間。想法偵探、煩惱盒的內容不會傳出去。要不要分享，由你決定。</p><button class="btn dark" data-share="1">分享這週</button></div></section></div>';
   }
 
   /* ---------- 畫冊 ---------- */
@@ -522,6 +568,12 @@
     if (g) { S.page += 1; S.img = null; save(); render(); return; }
     if (h === "thought") { onThought(e); return; }
     if (h === "setup") { onSetup(e); return; }
+    if (e.target.closest("[data-share]")) {
+      var txt = weekSummary();
+      if (navigator.share) navigator.share({ text: txt }).catch(function () {});
+      else if (navigator.clipboard) { navigator.clipboard.writeText(txt); alertMsg("已複製，可以貼到 LINE 傳給媽媽。"); }
+      return;
+    }
     if (h === "home" || h === "" || h === "day") onHomeClick(e);
   });
   app.addEventListener("input", function (e) {
@@ -560,4 +612,5 @@
   });
 
   render();
+  loadQuotes();
 })();
