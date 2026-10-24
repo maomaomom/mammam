@@ -151,7 +151,7 @@
   function viewHome() {
     if (isNight()) return viewNight();
     var q = quoteOfDay(), t = today();
-    var h = header("早安", null, '<div class="quote"><small>今日一句</small><p>' + esc(q.text) + "</p><em>— " + esc(q.from) + "</em></div>");
+    var h = header("早安", null, '<div class="quote"><small>今天的心靈雞湯</small><p>' + esc(q.text) + "</p><em>— " + esc(q.from) + "</em></div>");
 
     // 早晨三件事
     var m = S.morning[t] || [false, false, false];
