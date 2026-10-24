@@ -71,9 +71,19 @@
     return '<div class="puzzle">' + pic + '<div class="grid">' + cells + "</div></div>";
   }
 
+  /* ---------- 科目 ---------- */
+  function hasMine() { return !!(S.my && S.my.length); }
+  function courses() {
+    if (!hasMine()) return D.courses;
+    return S.my.map(function (c, i) {
+      return { id: c.id, name: c.name, kind: c.kind, date: c.date, tier: c.tier, color: D.palette[i % D.palette.length], steps: D.templates[c.kind] || D.templates["其他"] };
+    });
+  }
+  function courseById(id) { return courses().filter(function (x) { return x.id === id; })[0]; }
+
   /* ---------- 今天的一步 ---------- */
   function firstCourse() {
-    var list = D.courses.filter(function (c) { return c.tier === "first" && (S.course[c.id] || 0) < c.steps.length; });
+    var list = courses().filter(function (c) { return c.tier === "first" && (S.course[c.id] || 0) < c.steps.length; });
     list.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     return list[0] || null;
   }
@@ -85,6 +95,7 @@
     if ((dow === 2 || dow === 5) && !S.socialDone[t] && stepsToday === 0) {
       return { line: "人際", cls: "t-coral", t: D.social.t, small: D.social.small, why: D.social.why, min: D.social.min, social: true };
     }
+    if (!hasMine()) return { line: "學業 · 第一步", cls: "t-green", t: "打開學校系統，把科目填進期中地圖", small: "只填一科", why: "知道每一科什麼時候考。一科一行就好。", min: 10, setup: true };
     var c = firstCourse();
     if (!c) return { line: "人際", cls: "t-coral", t: D.social.t, small: D.social.small, why: D.social.why, min: D.social.min, social: true };
     var i = S.course[c.id] || 0, st = c.steps[i];
@@ -174,7 +185,7 @@
         '<span class="tag t-gray">約 ' + (small ? 2 : st.min) + " 分鐘</span>" + (small ? '<span class="tag t-mus">小一點的版本</span>' : "") + "</div>" +
         '<div class="step-title">' + esc(small ? st.small : st.t) + "</div>" +
         '<div class="why">目的：' + esc(st.why) + "</div>" +
-        '<button class="btn" data-act-home="done">做到了，蓋章</button>' +
+        (st.setup ? '<a class="btn" href="#setup">現在去填</a>' : '<button class="btn" data-act-home="done">做到了，蓋章</button>') +
         (small ? '<button class="btn ghost" data-act-home="normal">回到原本的版本</button>' : '<button class="btn ghost" data-act-home="smaller">太難了，換小一點的</button>') +
         (st.course ? '<a class="link" href="#map">看整個期中地圖 →</a>' : "") + "</div>";
     }
@@ -242,15 +253,17 @@
 
   /* ---------- 期中地圖 ---------- */
   function viewMap() {
-    var cs = D.courses.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var cs = courses().slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     var first = parse(cs[0].date); var mon = new Date(first); mon.setDate(first.getDate() - ((first.getDay() + 6) % 7));
+    var last = parse(cs[cs.length - 1].date); var weeks = Math.min(4, Math.max(2, Math.floor((last - mon) / 604800000) + 1));
+    var WN = ["一", "二", "三", "四"];
     var byDate = {}; cs.forEach(function (c) { (byDate[c.date] = byDate[c.date] || []).push(c); });
     var cal = '<div class="cal"><span></span>' + ["一", "二", "三", "四", "五"].map(function (w) { return '<span class="h">' + w + "</span>"; }).join("");
-    for (var w = 0; w < 2; w++) {
-      cal += '<span class="wk">第' + (w ? "二" : "一") + "週</span>";
+    for (var w = 0; w < weeks; w++) {
+      cal += '<span class="wk">第' + WN[w] + "週</span>";
       for (var i = 0; i < 5; i++) {
         var d = new Date(mon); d.setDate(mon.getDate() + w * 7 + i); var k = dkey(d);
-        cal += '<div class="cell' + (k === today() ? " today" : "") + '">' + md(k) + (byDate[k] || []).map(function (c) { return '<span class="ev" style="background:' + c.color + '33;color:#22223B">' + c.id + " " + c.kind + "</span>"; }).join("") + "</div>";
+        cal += '<div class="cell' + (k === today() ? " today" : "") + '">' + md(k) + (byDate[k] || []).map(function (c) { return '<span class="ev" style="background:' + c.color + '33;color:#22223B">' + esc(c.name.slice(0, 4)) + "</span>"; }).join("") + "</div>";
       }
     }
     cal += "</div>";
@@ -259,19 +272,21 @@
       var done = S.course[c.id] || 0, info = c.kind + " " + md(c.date) + " · 還有 " + daysUntil(c.date) + " 天";
       if (c.steps.length) info += " · 小步 " + Math.min(done, c.steps.length) + "/" + c.steps.length;
       if (c.tier === "later") info = c.kind + " " + md(c.date) + " · 先交給大人和老師談";
-      var inner = '<span class="bar" style="background:' + c.color + '"></span><span class="mid"><b>' + c.name + "</b><span>" + info + '</span></span><span class="pill ' + tierName[c.tier][1] + '">' + tierName[c.tier][0] + "</span>";
+      var inner = '<span class="bar" style="background:' + c.color + '"></span><span class="mid"><b>' + esc(c.name) + "</b><span>" + info + '</span></span><span class="pill ' + tierName[c.tier][1] + '">' + tierName[c.tier][0] + "</span>";
       return c.steps.length ? '<a class="row" href="#course/' + c.id + '">' + inner + "</a>" : '<div class="row">' + inner + "</div>";
     }).join("");
     var fc = firstCourse();
-    return '<div class="wrap">' + header("期中地圖", "home", '<div class="date">不用一次準備全部，一天只走一步。</div>') +
-      '<section class="sec"><div class="sec-h"><span class="n">1</span><b>兩週時間軸</b><span class="r">日期為示意</span></div>' + cal + "</section>" +
+    var banner = hasMine() ? '<section class="sec"><a class="btn ghost" href="#setup">修改我的科目</a></section>'
+      : '<section class="sec"><div class="hint"><b>下面是範例</b>按下面的按鈕，換成你自己的科目和日期。一科一行就好，只存在這支手機。</div><a class="btn" href="#setup">填我的科目</a></section>';
+    return '<div class="wrap">' + header("期中地圖", "home", '<div class="date">不用一次準備全部，一天只走一步。</div>') + banner +
+      '<section class="sec"><div class="sec-h"><span class="n">1</span><b>時間軸</b><span class="r">' + (hasMine() ? "" : "範例") + '</span></div>' + cal + "</section>" +
       '<section class="sec"><div class="sec-h"><span class="n">2</span><b>每一科</b><span class="r">點科目看小步</span></div><div class="list">' + rows + "</div></section>" +
-      (fc ? '<section class="sec"><div class="hint" style="background:var(--green-l)"><b style="color:var(--green-d)">今天的一步從這裡來</b>' + fc.name + " · " + esc(fc.steps[S.course[fc.id] || 0].t) + "</div></section>" : "") + "</div>";
+      (fc ? '<section class="sec"><div class="hint" style="background:var(--green-l)"><b style="color:var(--green-d)">今天的一步從這裡來</b>' + esc(fc.name) + " · " + esc(fc.steps[S.course[fc.id] || 0].t) + "</div></section>" : "") + "</div>";
   }
 
   /* ---------- 單一科目 ---------- */
   function viewCourse(id) {
-    var c = D.courses.filter(function (x) { return x.id === id; })[0];
+    var c = courseById(id);
     if (!c) return viewMap();
     var done = S.course[id] || 0;
     var bars = c.steps.map(function (_, i) { return '<i style="background:' + (i < done ? "#1F5A3A" : "#CDEBD9") + '"></i>'; }).join("");
@@ -280,7 +295,7 @@
       if (i === done) return '<div class="st cur"><span class="num">' + (i + 1) + '</span><div style="flex:1"><div class="tx"><b>' + esc(s.t) + '</b></div><div class="sub">現在這一步 · 約 ' + s.min + ' 分鐘</div><button class="btn small" data-course-done="' + id + '">做到了，蓋章</button></div></div>';
       return '<div class="st lock"><span class="num">' + (i + 1) + '</span><div class="tx">' + esc(s.t) + "</div></div>";
     }).join("");
-    return '<div class="wrap">' + header(c.name, "map", '<div class="date">' + c.kind + " " + md(c.date) + " · 還有 " + daysUntil(c.date) + " 天 · 已走 " + done + " / " + c.steps.length + ' 步</div><div class="prog" style="grid-template-columns:repeat(' + c.steps.length + ',1fr);margin-top:10px">' + bars + "</div>") +
+    return '<div class="wrap">' + header(esc(c.name), "map", '<div class="date">' + c.kind + " " + md(c.date) + " · 還有 " + daysUntil(c.date) + " 天 · 已走 " + done + " / " + c.steps.length + ' 步</div><div class="prog" style="grid-template-columns:repeat(' + c.steps.length + ',1fr);margin-top:10px">' + bars + "</div>") +
       '<section class="sec steps">' + list + '<p style="text-align:center;font-size:12px;color:var(--mute)">後面的步驟看得到，但每次只開放一步</p></section></div>';
   }
 
@@ -292,7 +307,7 @@
   function viewLines() {
     var L = D.lines, t = today();
     var wk = 0; for (var j = 0; j < 7; j++) { var dd = new Date(); dd.setDate(dd.getDate() - j); var mm = S.morning[dkey(dd)]; if (mm && mm[0] && mm[1] && mm[2]) wk++; }
-    var studyDone = 0; D.courses.forEach(function (c) { studyDone += Math.min(S.course[c.id] || 0, c.steps.length); });
+    var studyDone = 0; courses().forEach(function (c) { studyDone += Math.min(S.course[c.id] || 0, c.steps.length); });
     return '<div class="wrap">' + header("我的三條線", "home", '<div class="date">不用三條一起衝，每天走一步就好。</div>') + '<section class="sec">' +
       lineCard("作息線", "t-blue", "#24476B", "#CFE3F7", L.routine.end, L.routine.stages.length, L.routine.at, L.routine.stages[L.routine.at] + "完成早晨三件事", '<div style="font-size:13px;color:var(--soft);margin-top:4px">這週做到 ' + wk + " 天 · 穩定一週後，可以試試 " + L.routine.stages[L.routine.at + 1] + "</div>") +
       lineCard("人際線", "t-coral", "#7A2E1C", "#FAD4C8", L.social.end, L.social.steps.length, L.social.at, L.social.steps[L.social.at], '<div style="font-size:12px;color:var(--mute);margin-top:4px">第 5 步以後，等作息線走進教室才會打開</div>') +
@@ -382,6 +397,62 @@
   function restoreFields() { TF.forEach(function (id) { var el = document.getElementById(id); if (el && FIELDS[id]) el.value = FIELDS[id]; }); }
   function alertMsg(m) { var p = document.createElement("p"); p.className = "toast"; p.textContent = m; app.querySelector(".wrap").appendChild(p); }
 
+  /* ---------- 填我的科目 ---------- */
+  var SF = { kind: "筆試", tier: "first", msg: "" };
+  var SV = {};
+  var TIERS = [
+    { k: "first", n: "先顧", d: "一定要過。每天會從這科排小步。" },
+    { k: "keep", n: "跟上", d: "做到及格就好。" },
+    { k: "later", n: "再談", d: "先不排小步，交給大人和老師談，或討論停修。" }
+  ];
+  function viewSetup() {
+    var mine = S.my || [];
+    var list = mine.length ? mine.slice().sort(function (a, b) { return a.date < b.date ? -1 : 1; }).map(function (c) {
+      var tn = TIERS.filter(function (x) { return x.k === c.tier; })[0].n;
+      return '<div class="row"><span class="mid"><b>' + esc(c.name) + "</b><span>" + esc(c.kind) + " " + md(c.date) + " · " + tn + '</span></span><button class="chip" data-del="' + c.id + '">刪除</button></div>';
+    }).join("") : '<p class="fhint">還沒有科目。從下面開始填第一科。</p>';
+    var kinds = ["筆試", "報告", "作業", "其他"].map(function (k) { return '<button class="chip' + (SF.kind === k ? " on" : "") + '" data-kind="' + k + '">' + k + "</button>"; }).join("");
+    var tiers = TIERS.map(function (x) { return '<button class="trow' + (SF.tier === x.k ? " on" : "") + '" data-tier="' + x.k + '"><span class="say">' + x.n + '</span><span class="nm">' + x.d + "</span></button>"; }).join("");
+    return '<div class="wrap">' + header("填我的科目", "home", '<div class="date">打開學校系統的課表，對照著填。<br>一科一行就好，只存在這支手機。</div>') +
+      '<section class="sec"><div class="sec-h"><b>我的科目</b><span class="r">' + mine.length + ' 科</span></div><div class="list">' + list + "</div></section>" +
+      '<section class="sec"><div class="card tcard">' +
+      '<div><label class="f" for="cname">科目名稱</label><input type="text" id="cname" placeholder="例如：經濟學"></div>' +
+      '<div><span class="f">期中要交什麼？</span><div class="chips">' + kinds + "</div></div>" +
+      '<div><label class="f" for="cdate">考試或截止日期</label><input type="date" id="cdate"></div>' +
+      '<div><span class="f">這科要怎麼顧？</span><p class="fhint">不知道怎麼選，可以先選「先顧」，之後再改。</p><div class="tlist">' + tiers + "</div></div>" +
+      '<button class="btn dark" data-setup="add">加入這一科</button>' + (SF.msg ? '<p class="toast">' + esc(SF.msg) + "</p>" : "") + "</div></section>" +
+      (mine.length ? '<section class="sec"><button class="btn" data-setup="finish">填好了，蓋章</button></section>' : "") + "</div>";
+  }
+  function keepSetup() { ["cname", "cdate"].forEach(function (id) { var el = document.getElementById(id); if (el) SV[id] = el.value; }); }
+  function restoreSetup() { ["cname", "cdate"].forEach(function (id) { var el = document.getElementById(id); if (el && SV[id]) el.value = SV[id]; }); }
+  function onSetup(e) {
+    var k = e.target.closest("[data-kind]"); if (k) { keepSetup(); SF.kind = k.getAttribute("data-kind"); render(); return; }
+    var t = e.target.closest("[data-tier]"); if (t) { keepSetup(); SF.tier = t.getAttribute("data-tier"); render(); return; }
+    var del = e.target.closest("[data-del]");
+    if (del) { keepSetup(); var id = del.getAttribute("data-del"); S.my = (S.my || []).filter(function (c) { return c.id !== id; }); save(); render(); return; }
+    var b = e.target.closest("[data-setup]"); if (!b) return;
+    var a = b.getAttribute("data-setup");
+    if (a === "add") {
+      keepSetup();
+      var name = (SV.cname || "").trim(), date = SV.cdate || "";
+      if (!name) { SF.msg = "請先寫科目名稱。"; render(); return; }
+      if (!date) { SF.msg = "請選擇日期。"; render(); return; }
+      S.my = S.my || [];
+      S.my.push({ id: "c" + Date.now(), name: name, kind: SF.kind, date: date, tier: SF.tier });
+      SF = { kind: "筆試", tier: "first", msg: "加好了「" + name + "」。可以繼續填下一科。" }; SV = {};
+      save(); render(); return;
+    }
+    if (a === "finish") {
+      SF.msg = "";
+      var first = !S.stamps.some(function (s) { return s.k === "setup"; });
+      location.hash = "#map";
+      if (first) {
+        var r = addStamp("setup");
+        showDone({ title: "期中地圖完成了。", text: "每一科都有位置了。之後每天，只會從裡面拿出一小步。", flip: r.flip, pageDone: r.pageDone });
+      }
+    }
+  }
+
   /* ---------- 路由與事件 ---------- */
   function render() {
     var h = (location.hash || "#home").slice(1), html;
@@ -390,17 +461,19 @@
     else if (h === "lines") html = viewLines();
     else if (h === "gallery") html = viewGallery();
     else if (h === "thought") html = viewThought();
+    else if (h === "setup") html = viewSetup();
     else if (h === "night") html = viewNight();
     else html = viewHome();
     app.innerHTML = html;
     if (h === "thought") restoreFields();
+    if (h === "setup") restoreSetup();
   }
   window.addEventListener("hashchange", function () { render(); window.scrollTo(0, 0); });
   app.addEventListener("click", function (e) {
     var h = (location.hash || "#home").slice(1);
     var cd = e.target.closest("[data-course-done]");
     if (cd) {
-      var id = cd.getAttribute("data-course-done"), c = D.courses.filter(function (x) { return x.id === id; })[0];
+      var id = cd.getAttribute("data-course-done"), c = courseById(id);
       completeStep({ t: c.steps[S.course[id] || 0].t, course: c, idx: S.course[id] || 0 }); return;
     }
     var nb = e.target.closest("[data-night]");
@@ -408,6 +481,7 @@
     var g = e.target.closest("[data-gal]");
     if (g) { S.page += 1; S.img = null; save(); render(); return; }
     if (h === "thought") { onThought(e); return; }
+    if (h === "setup") { onSetup(e); return; }
     if (h === "home" || h === "") onHomeClick(e);
   });
   app.addEventListener("input", function (e) {
@@ -424,7 +498,8 @@
     pv.innerHTML = '<div class="sheet"><h2 style="text-align:center">預覽所有畫面</h2><p style="text-align:center;margin-bottom:14px">測試版才有這個按鈕，正式版會拿掉</p>' +
       '<a href="#home">主畫面<small>今日一句、早晨三件事、今天的一步、這週</small></a>' +
       '<a href="#map">期中地圖<small>兩週時間軸、每一科分類</small></a>' +
-      '<a href="#course/A">單一科目小步路徑<small>以課程A 為例</small></a>' +
+      '<a href="#setup">填我的科目<small>她自己填科目和考試日期</small></a>' +
+      '<a href="#course/' + (courses()[0] ? courses()[0].id : "A") + '">單一科目小步路徑<small>以第一科為例</small></a>' +
       '<a href="#lines">我的三條線</a>' +
       '<a href="#gallery">我的畫冊（拼圖）<small>可以從相簿選一張畫試試</small></a>' +
       '<a href="#thought">腦袋很吵（想法偵探）</a>' +
