@@ -169,16 +169,32 @@
     if (f || row.length) { row.push(f); rows.push(row); }
     return rows;
   }
+  function fetchCSV(url) {
+    return fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now()).then(function (r) { return r.text(); }).then(parseCSV);
+  }
+  var OK = /^(v|V|✓|✔|是|放入|好|TRUE|true|1)$/;
   function loadQuotes() {
-    if (!D.quotesCSV) return;
-    fetch(D.quotesCSV + (D.quotesCSV.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now()).then(function (r) { return r.text(); }).then(function (txt) {
-      var rows = parseCSV(txt).slice(1).filter(function (r) { return r[0] && r[0].trim(); });
-      var list = rows.filter(function (r) { return !r[2] || /^(v|V|✓|是|放入|TRUE|true|1)$/.test(r[2].trim()); })
+    var jobs = [];
+    // 媽媽的試算表：A 句子、B 署名、C 放入（空白或打勾＝放入）
+    if (D.quotesCSV) jobs.push(fetchCSV(D.quotesCSV).then(function (rows) {
+      return rows.slice(1).filter(function (r) { return r[0] && r[0].trim() && (!r[2] || !r[2].trim() || OK.test(r[2].trim())); })
         .map(function (r) { return { text: r[0].trim(), from: (r[1] || "").trim() || "一個關心你的人" }; });
+    }).catch(function () { return []; }));
+    // 親友投稿（Google 表單回應）：依標題找欄位；一定要媽媽在「放入」欄打勾才會出現
+    if (D.wishesCSV) jobs.push(fetchCSV(D.wishesCSV).then(function (rows) {
+      var h = rows[0] || [], ti = -1, fi = -1, oi = -1;
+      h.forEach(function (x, i) { x = x || ""; if (ti < 0 && /(一句|句子|想說|話)/.test(x)) ti = i; else if (fi < 0 && /(署名|名字|稱呼)/.test(x)) fi = i; else if (oi < 0 && /放入/.test(x)) oi = i; });
+      if (ti < 0 || oi < 0) return [];
+      return rows.slice(1).filter(function (r) { return r[ti] && r[ti].trim() && r[oi] && OK.test(r[oi].trim()); })
+        .map(function (r) { return { text: r[ti].trim(), from: (fi >= 0 && r[fi] && r[fi].trim()) || "一個關心你的人" }; });
+    }).catch(function () { return []; }));
+    if (!jobs.length) return;
+    Promise.all(jobs).then(function (lists) {
+      var list = [].concat.apply([], lists);
       if (!list.length) return;
       var old = null; try { old = localStorage.getItem(KEY + "-quotes"); localStorage.setItem(KEY + "-quotes", JSON.stringify(list)); } catch (e) {}
       if (old !== JSON.stringify(list)) render();
-    }).catch(function () {});
+    });
   }
 
   /* 分享這週給媽媽：只有數字，不含任何私密內容 */
