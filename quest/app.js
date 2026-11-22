@@ -330,12 +330,12 @@
       h += '<div class="status wait">還差：' + lack.join("、") + (t <= w[2] ? "<br><small>這週還剩 " + remain + " 天</small>" : "<br><small>這週已結束，下一週繼續累積，段位不會倒退。</small>") + "</div>";
     }
     h += "</section>";
-    h += '<section class="panel"><h2 class="ribbon">這週每一天</h2>';
+    h += '<section class="panel"><h2 class="ribbon">這週每一天</h2><p class="empty" style="font-size:13px;padding:0 0 4px">右邊的「複習 0/2」＝這天排了 2 項要打勾的複習，已完成 0 項（不含上學、補習和三顆核心）。點一天可以看內容。</p>';
     eachDay(w[1], w[2], function (k) {
       var d = S.days[k] || {}, ts = tasksOf(k), tot = 0, dn = 0;
       ts.forEach(function (x) { if (x.st !== "moved") { tot++; if (x.st === "done") dn++; } });
       h += '<div class="dayrow' + (k === t ? " today" : "") + '" data-act="day" data-k="' + k + '"><span class="d">' + wdn(k) + " " + md(k) + '</span><span class="pills"><i class="pill cn' + (d.cn ? " on" : "") + '">國</i><i class="pill en' + (d.en ? " on" : "") + '">英</i><i class="pill err' + (d.err ? " on" : "") + '">訂</i>' + (pd(k).getDay() === 0 ? '<i class="pill essay' + (d.essay ? " on" : "") + '">作</i>' : "") + '</span>' +
-        '<span class="ev">' + esc(eventOf(k)) + '</span><span class="tcount">' + (tot ? "任務 " + dn + "/" + tot : "") + "</span></div>";
+        '<span class="ev">' + esc(eventOf(k)) + '</span><span class="tcount">' + (tot ? "複習 " + dn + "/" + tot : "") + "</span></div>";
     });
     h += "</section>";
     h += '<button class="btn big" data-act="share" data-n="' + w[0] + '">📤 傳給媽媽（這週摘要）</button>';
