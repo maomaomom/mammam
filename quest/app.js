@@ -50,6 +50,8 @@
     { id: "back", n: "把它追回來", d: "完成 5 項從前一天移過來的任務", ic: "b_shoe", ok: function (t) { return t.movedDone >= 5; } },
     { id: "ny", n: "跨年也在讀", d: "拿到第 6 週（12/27–1/2）的證書", ic: "b_star", ok: function () { return !!S.certs[6]; } },
     { id: "i100", n: "百項里程碑", d: "累積完成 100 項（核心＋自排）", ic: "b_watch", ok: function (t) { return t.items >= 100; } },
+    { id: "pen", n: "筆耕不輟", d: "週日作文累積 4 篇", ic: "b_book", ok: function (t) { return t.essays >= 4; } },
+    { id: "pen2", n: "筆耕不輟", lv: "Lv.2", d: "週日作文累積 8 篇（全勤）", ic: "b_book", ok: function (t) { return t.essays >= 8; } },
     { id: "go", n: "出征", d: "拿到最後衝刺的出征證書", ic: "b_crown", ok: function () { return !!S.certs[9]; } }
   ];
 
@@ -108,7 +110,7 @@
   }
   function tasksOf(k) {
     var out = [];
-    planOf(k).forEach(function (t, i) { if (typeof t === "string" || !t.kind || t.kind === "task") out.push({ id: "p" + i, text: itemText(t), t: t.t, at: t.at }); });
+    planOf(k).forEach(function (t, i) { if (typeof t === "string" || ((!t.kind || t.kind === "task") && !t.routine)) out.push({ id: "p" + i, text: itemText(t), t: t.t, at: t.at }); });
     ((S.days[k] && S.days[k].extra) || []).forEach(function (x) { out.push({ id: x.id, text: x.text, from: x.from, added: x.added }); });
     var ts = (S.days[k] && S.days[k].ts) || {};
     out.forEach(function (t) { t.st = ts[t.id] || ""; });
@@ -119,6 +121,7 @@
     plan.forEach(function (it, i) {
       if (typeof it === "string") it = { x: it, kind: "task" };
       var kind = it.kind || "task", where = '<span class="when">' + esc(it.t || "") + (it.at ? "　📍" + esc(it.at) : "") + "</span>";
+      if (it.routine === "essay") { h += '<div class="fixed corei essayi' + (d.essay ? " ok" : "") + '">' + where + '<span class="ftxt">✍️ ' + esc(it.x) + (d.essay ? "　✓" : "　→ 在上面「每週日作文」打勾") + "</span></div>"; return; }
       if (kind === "fixed") h += '<div class="fixed">' + where + '<span class="ftxt">' + esc(it.x) + "</span></div>";
       else if (kind === "core") {
         var ok = it.core === "all" ? (d.cn && d.en && d.err) : it.core === "cnen" ? (d.cn && d.en) : !!d[it.core];
@@ -133,12 +136,12 @@
 
   /* ---------- 週統計、證書 ---------- */
   function wstats(w) {
-    var r = { cn: 0, en: 0, err: 0, errN: 0, nw: 0, old: 0, by: {}, tDone: 0, tTot: 0, days: 0, sofar: 0, five: {} };
+    var r = { essay: 0, cn: 0, en: 0, err: 0, errN: 0, nw: 0, old: 0, by: {}, tDone: 0, tTot: 0, days: 0, sofar: 0, five: {} };
     var t = today();
     eachDay(w[1], w[2], function (k) {
       r.days++; if (k <= t) r.sofar++;
       var d = S.days[k] || {};
-      if (d.cn) r.cn++; if (d.en) r.en++;
+      if (d.cn) r.cn++; if (d.en) r.en++; if (d.essay) r.essay++;
       if (d.cn) r.five["國文"] = 1; if (d.en) r.five["英文"] = 1;
       if (d.err) { r.err++; r.nw += d.err.nw || 0; r.old += d.err.old || 0; (d.err.subj || []).forEach(function (s) { r.by[s] = (r.by[s] || 0) + 1; r.five[s] = 1; }); }
       tasksOf(k).forEach(function (x) { if (x.st !== "moved") { r.tTot++; if (x.st === "done") { r.tDone++; var s = subjOf(x.text); if (s) r.five[s] = 1; } } });
@@ -165,11 +168,11 @@
 
   /* ---------- 成就 ---------- */
   function totals() {
-    var r = { items: 0, allDays: 0, both: 0, errN: 0, old: 0, errSubj: 0, movedDone: 0, fiveWeek: false }, es = {};
+    var r = { essays: 0, items: 0, allDays: 0, both: 0, errN: 0, old: 0, errSubj: 0, movedDone: 0, fiveWeek: false }, es = {};
     Object.keys(S.days).forEach(function (k) {
       var d = S.days[k];
       if (d.cn) r.items++; if (d.en) r.items++; if (d.err) r.items++;
-      if (d.cn && d.en) r.both++;
+      if (d.cn && d.en) r.both++; if (d.essay) { r.essays++; r.items++; }
       if (d.err) { r.errN += errN(d); r.old += d.err.old || 0; (d.err.subj || []).forEach(function (s) { es[s] = 1; }); }
       var ts = tasksOf(k), allT = true;
       ts.forEach(function (x) { if (x.st === "done") { r.items++; if (x.from) r.movedDone++; } if (x.st !== "done" && x.st !== "moved") allT = false; });
@@ -258,7 +261,7 @@
     else if (w[0] === 9) h += '<div class="note">🔥 最後衝刺！這 5 天三顆核心各做到 4 天以上，就拿「勇者・出征」證書。</div>';
     // 三顆核心
     var d = S.days[t] || {};
-    h += '<section class="panel"><h2 class="ribbon">每天必做</h2>' + coreRow("cn", d) + coreRow("en", d) + errRow(d) + "</section>";
+    h += '<section class="panel"><h2 class="ribbon">每天必做</h2>' + coreRow("cn", d) + coreRow("en", d) + errRow(d) + (w && pd(t).getDay() === 0 ? essayRow(d) : "") + "</section>";
     // 自排任務
     var ts = tasksOf(t);
     h += '<section class="panel"><h2 class="ribbon">今天的行程<button class="btn sm add" data-act="addtask" aria-label="加一項">＋</button></h2>';
@@ -285,6 +288,11 @@
     else act = '<button class="btn" data-act="start" data-k="' + k + '">開始挑戰 ▶</button>';
     var clock = done ? "" : '<div class="clock"><img src="img/clock.png" alt=""><span id="t-' + k + '">' + fmt(TARGET - e) + '</span></div><div class="tbar"><i id="b-' + k + '" style="width:' + (e / TARGET * 100) + '%"></i></div>';
     return '<div class="core' + (done ? " done" : "") + '"><div class="cico ' + k + '">' + c.ch + '</div><div class="cmain"><b>' + c.n + "</b><small>" + (done ? "今天的 10 分鐘完成了！" : c.hint) + "</small>" + clock + '</div><div class="cact">' + act + "</div></div>";
+  }
+  function essayRow(d) {
+    var act = d.essay ? '<div class="stamp' + (lastStamp === "essay" ? " pop" : "") + '">達成<small>作文</small></div><button class="linkbtn" data-act="essayundo">改回還沒寫</button>'
+      : '<button class="btn" data-act="essay">寫完了 ✓</button>';
+    return '<div class="core' + (d.essay ? " done" : "") + '"><div class="cico essay">作</div><div class="cmain"><b>每週日作文</b><small>' + (d.essay ? "這週的作文寫完了！" : "國寫一篇，限時 80 分鐘") + '</small></div><div class="cact">' + act + "</div></div>";
   }
   function errRow(d) {
     var act, sub;
@@ -313,7 +321,7 @@
     var h = '<div class="title"><img src="img/m_chart.png" alt="">' + (w[0] === 9 ? "最後衝刺" : "第 " + w[0] + " 週") + "</div>";
     h += '<div class="wknav"><button class="btn sm" data-act="wk" data-d="-1"' + (w[0] === 1 ? " disabled style=\"opacity:.4\"" : "") + '>◀</button><b>' + md(w[1]) + "（" + wdn(w[1]) + "）– " + md(w[2]) + "（" + wdn(w[2]) + "）</b>" +
       '<button class="btn sm" data-act="wk" data-d="1"' + (w[0] === 9 ? " disabled style=\"opacity:.4\"" : "") + ">▶</button></div>";
-    h += '<section class="panel"><h2 class="ribbon">證書進度</h2><div class="prog">' + bar("國文", r.cn, n.cn, "#e0483e") + bar("英文", r.en, n.en, "#1f6fd1") + bar("錯題訂正", r.err, n.err, "#7b4fd1") + "</div>";
+    h += '<section class="panel"><h2 class="ribbon">證書進度</h2><div class="prog">' + bar("國文", r.cn, n.cn, "#e0483e") + bar("英文", r.en, n.en, "#1f6fd1") + bar("錯題訂正", r.err, n.err, "#7b4fd1") + "</div>" + (w[0] === 9 ? "" : '<div class="essayline' + (r.essay ? " ok" : "") + '">✍️ 週日作文：' + (r.essay ? "這週寫完了 ✓" : "還沒寫") + "</div>");
     if (cert) h += '<div class="status ok">已取得「' + TIERS[cert.tier - 1].name + "」證書 🎉<br><button class=\"btn sm\" data-act=\"cert\" data-n=\"" + w[0] + '" style="margin-top:6px">看證書</button></div>';
     else {
       var lack = [];
@@ -326,7 +334,7 @@
     eachDay(w[1], w[2], function (k) {
       var d = S.days[k] || {}, ts = tasksOf(k), tot = 0, dn = 0;
       ts.forEach(function (x) { if (x.st !== "moved") { tot++; if (x.st === "done") dn++; } });
-      h += '<div class="dayrow' + (k === t ? " today" : "") + '" data-act="day" data-k="' + k + '"><span class="d">' + wdn(k) + " " + md(k) + '</span><span class="pills"><i class="pill cn' + (d.cn ? " on" : "") + '">國</i><i class="pill en' + (d.en ? " on" : "") + '">英</i><i class="pill err' + (d.err ? " on" : "") + '">訂</i></span>' +
+      h += '<div class="dayrow' + (k === t ? " today" : "") + '" data-act="day" data-k="' + k + '"><span class="d">' + wdn(k) + " " + md(k) + '</span><span class="pills"><i class="pill cn' + (d.cn ? " on" : "") + '">國</i><i class="pill en' + (d.en ? " on" : "") + '">英</i><i class="pill err' + (d.err ? " on" : "") + '">訂</i>' + (pd(k).getDay() === 0 ? '<i class="pill essay' + (d.essay ? " on" : "") + '">作</i>' : "") + '</span>' +
         '<span class="ev">' + esc(eventOf(k)) + '</span><span class="tcount">' + (tot ? "任務 " + dn + "/" + tot : "") + "</span></div>";
     });
     h += "</section>";
@@ -345,7 +353,7 @@
         var k = add(s, i), d = S.days[k] || {}, ex = EXAM.indexOf(k) >= 0, ev = eventOf(k);
         var lab = (k === START || pd(k).getDate() === 1) ? md(k) : String(pd(k).getDate());
         h += '<div class="cell' + (k === t ? " today" : "") + (ex ? " exam" : "") + '" data-act="day" data-k="' + k + '"><span class="n">' + lab + "</span>" +
-          (ex ? '<span class="e">學測</span>' : '<span class="dots"><i class="' + (d.cn ? "cn" : "") + '"></i><i class="' + (d.en ? "en" : "") + '"></i><i class="' + (d.err ? "err" : "") + '"></i></span>' + (ev ? '<span class="e">' + esc(ev.slice(0, 4)) + "</span>" : "")) + "</div>";
+          (ex ? '<span class="e">學測</span>' : '<span class="dots"><i class="' + (d.cn ? "cn" : "") + '"></i><i class="' + (d.en ? "en" : "") + '"></i><i class="' + (d.err ? "err" : "") + '"></i>' + (pd(k).getDay() === 0 && k >= START ? '<i class="es' + (d.essay ? " on" : "") + '"></i>' : "") + '</span>' + (ev ? '<span class="e">' + esc(ev.slice(0, 4)) + "</span>" : "")) + "</div>";
       }
       var c = S.certs[r + 1];
       h += c ? '<div class="wkb t' + c.tier + '" data-act="cert" data-n="' + (r + 1) + '" style="background:linear-gradient(var(--c1),var(--c2));border:2px solid var(--c2);color:#fff;text-shadow:0 1px 0 #000">' + TIERS[c.tier - 1].rar + "</div>"
@@ -464,7 +472,7 @@
     var s = "【勇者之路】" + (n === 9 ? "最後衝刺" : "第 " + n + " 週") + " " + md(w[1]) + "–" + md(w[2]) + "\n" +
       "國文 " + r.cn + "/" + dd + " 天、英文 " + r.en + "/" + dd + " 天\n" +
       "錯題訂正 " + r.err + "/" + dd + " 天，共 " + r.errN + " 題（新錯題 " + r.nw + "、舊題重做 " + r.old + "）" + (by ? "\n訂正科目：" + by : "") + "\n" +
-      "自排任務 " + r.tDone + "/" + r.tTot + " 項完成\n" +
+      (n === 9 ? "" : "週日作文：" + (r.essay ? "已完成" : "未完成") + "\n") + "自排任務 " + r.tDone + "/" + r.tTot + " 項完成\n" +
       (c ? "本週證書：已取得「" + TIERS[c.tier - 1].name + "」（" + TIERS[c.tier - 1].rar + "）" : "本週證書：還在努力中") + "\n" +
       "目前段位：" + (rankTier() ? TIERS[rankTier() - 1].name : "新手勇者");
     return s;
@@ -505,6 +513,8 @@
       if (!was && coreAllDone()) pending.push({ type: "allcore" });
       after(); lastStamp = null; return;
     }
+    if (a === "essay") { day(t).essay = true; lastStamp = "essay"; burst(el); toast("作文完成！文筆 +1"); after(); lastStamp = null; return; }
+    if (a === "essayundo") { delete day(t).essay; after(); return; }
     if (a === "err") { openErr(); return; }
     if (a === "ec") { var f = el.getAttribute("data-f"); errDraft[f] = Math.max(0, Math.min(99, errDraft[f] + +el.getAttribute("data-d"))); drawErr(); return; }
     if (a === "es") { var s = el.getAttribute("data-s"), i = errDraft.subj.indexOf(s); if (i >= 0) errDraft.subj.splice(i, 1); else errDraft.subj.push(s); drawErr(); return; }
